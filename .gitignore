@@ -3,9 +3,13 @@
 *.a
 *.so
 
+
 # Folders
 _obj
+bin
+pkg
 _test
+github.com
 
 # Architecture specific extensions/prefixes
 *.[568vq]
@@ -20,3 +24,4 @@ _cgo_export.*
 _testmain.go
 
 *.exe
+*.zip
