@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"runtime"
 	"strings"
+	"config"
 )
 
 const (
@@ -49,7 +50,7 @@ func main() {
 	runtime.GOMAXPROCS(numCpus)
 	fmt.Printf("Started: %d cores, %d threads， version: %s\n", numCpus, THREADS, VERSION)
 
-	go ReadConfig()
+	go config.Read()
 
 	terminate := make(chan os.Signal)
 	signal.Notify(terminate, os.Interrupt)

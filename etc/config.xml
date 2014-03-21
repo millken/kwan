@@ -1,0 +1,7 @@
+<config>
+<timeout>60</timeout>
+<listen ip='*' port='5988' type='manage' />
+<admin user='admin' password='c4dd59407a7377c5c138ab5f6872c042' crypt='md5' auth_type='Basic' admin_ips='127.0.0.1|*'/>
+<hostname>aaaa</hostname>
+<vhost_dir>vhost/*.xml</vhost_dir>
+</config>
