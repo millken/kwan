@@ -50,8 +50,8 @@ func main() {
 	runtime.GOMAXPROCS(numCpus)
 	fmt.Printf("Started: %d cores, %d threads， version: %s\n", numCpus, THREADS, VERSION)
 
-	go config.Read()
-
+	config.Read()
+	StartServer()
 	terminate := make(chan os.Signal)
 	signal.Notify(terminate, os.Interrupt)
 

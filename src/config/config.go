@@ -1,6 +1,7 @@
 package config
 
 import (
+	//"github.com/valyala/ybc/bindings/go/ybc"
 	"encoding/xml"
 	"flag"
 	"fmt"
@@ -17,23 +18,30 @@ type Config struct {
 	VhostDir []string      `xml:"vhost_dir"`
 }
 
-type ConfigBind struct {
-	WideDomain []string
-	Domain []string
+
+//map[ip][port][domain][rule_id]
+//type Sites map[string]map[int]map[string]int
+
+//http://blog.golang.org/go-maps-in-action
+type Sites struct {
+	BindIp string
+	BindPort int
+	Domain string
 }
 
 var config Config
 var configFile string
 var configPath string
-var configBind map[string]ConfigBind
-
+var (
+	sites map[Sites]int
+	listen map[int]int
+)
 func init() {
 	flag.StringVar(&configFile, "c", "config.xml", "config file path")
 	flag.Parse()
 	if configFile == "" {
 		configFile = "../etc/config.xml"
 	}
-	configBind = make(map[string]ConfigBind)
 }
 
 func Read() {
@@ -59,5 +67,10 @@ func Read() {
 
 	LoadVhostDir()
 	fmt.Printf("config:%v\n", config)
-	fmt.Printf("configBind:%v\n", configBind)
+	fmt.Printf("sites:%v\n", sites)
+}
+
+
+func GetListen() map[int]int {
+	return listen
 }

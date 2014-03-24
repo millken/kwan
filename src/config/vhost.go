@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"os"
 	"strings"
+	"strconv"
 	"fmt"
 )
 
@@ -22,14 +23,15 @@ type Host struct {
 }
 
 func LoadVhostDir() {
-
+	newsites := make(map[Sites]int)
+	newlisten	:= make(map[int]int)	
 	for _, dir := range config.VhostDir {
 		files, err := filepath.Glob(configPath + dir)
 		if  err != nil {
 			fmt.Printf("read dir %s , %s", configPath + dir, err.Error())
 			continue
 		}
-		for _, filename := range files {
+		for index, filename := range files {
 			file, err := os.Open(filename)
 			defer file.Close()
 			if err != nil {
@@ -43,52 +45,56 @@ func LoadVhostDir() {
 				fmt.Printf("vhost xml parse error: %s\n", err.Error())
 			}
 				for _, bind := range vhost.Bind {
-					val, ok := configBind[bind]
-					if ok {
+						ip, port := getBindIpPort(bind)
+						newlisten[port] ++
 						for _, host := range vhost.Host {
-							if strings.HasPrefix(host.Domain, "*") == false {
-								if stringInSlice(host.Domain, val.WideDomain) {
-									break
-								}else{
-									val.WideDomain = append(val.WideDomain, host.Domain)
-								}
-
-							}else{
-								if stringInSlice(host.Domain, val.Domain) {
-									break
-								}else{
-									val.Domain = append(val.Domain, host.Domain)
-								}
-							}
+							newsites[Sites{ip, port, host.Domain}] = index
 						}
 						
-					}else{
-						val = ConfigBind{}
-						for _, host := range vhost.Host {
-							if strings.HasPrefix(host.Domain, "*") == false {
-								if stringInSlice(host.Domain, val.WideDomain) {
-									break
-								}else{
-									val.WideDomain = append(val.WideDomain, host.Domain)
-								}
-
-							}else{
-								if stringInSlice(host.Domain, val.Domain) {
-									break
-								}else{
-									val.Domain = append(val.Domain, host.Domain)
-								}
-							}
-						}
-					}
-					configBind[bind] = val
 				}
 			config.Vhosts = append(config.Vhosts, vhost)
 		}
 	}
-	
+	sites = newsites
+	listen = newlisten
 }
 
+
+
+func getBindIpPort(bind string) (ip string, port int) {
+	ip = "0.0.0.0"
+	if strings.Index(bind, ":") == -1 {
+		port1, err := strconv.Atoi(bind)
+		if err != nil {
+			port = 80
+		}else{
+			port = port1
+		}
+	}else{
+	
+		tmp := strings.Split(bind, ":")
+		
+		if tmp[0] != "" && tmp[0] != "*" {
+			ip = tmp[0]
+			
+			port2, err := strconv.Atoi(tmp[1])
+			if err != nil {
+				port = 80
+			}else{
+				port = port2
+			}
+		}else{
+			port2, err := strconv.Atoi(tmp[1])
+			if err != nil {
+				port = 80
+			}else{
+				port = port2
+			}			
+		}
+
+	}
+	return
+}
 func stringInSlice(a string, list []string) bool {
     for _, b := range list {
         if b == a {
