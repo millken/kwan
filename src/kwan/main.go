@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/signal"
 	"runtime"
 	"strings"
 	"config"
+	"time"
 )
 
 const (
@@ -52,9 +52,5 @@ func main() {
 
 	config.Read()
 	StartServer()
-	terminate := make(chan os.Signal)
-	signal.Notify(terminate, os.Interrupt)
-
-	<-terminate
-	fmt.Printf(" signal received, stopping\n")
+	time.Sleep(1e9)
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/ParsePlatform/go.grace/gracehttp"
+	"boot"
 	"net/http"
 	"fmt"
 	"config"
@@ -9,13 +9,14 @@ import (
 )
 
 func StartServer() {
-
+	server := boot.NewApp()
 	for port, _ := range config.GetListen() {
 		fmt.Printf("start listen : %d\n", port)
-		go gracehttp.Serve( &http.Server{Addr: fmt.Sprintf("%s%d", ":", port), Handler: ServerHandler(port)})
-
+		server.AddServer(&http.Server{Addr: fmt.Sprintf("%s%d", ":", port), Handler: ServerHandler(port)})
 	}
-	
+	if err := server.Run(); err != nil {
+		fmt.Printf("server run error : %s", err.Error())
+	}
 }
 
 func ServerHandler(port int) http.Handler {
