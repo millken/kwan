@@ -51,6 +51,6 @@ func main() {
 	fmt.Printf("Started: %d cores, %d threads， version: %s\n", numCpus, THREADS, VERSION)
 
 	config.Read()
-	StartServer()
+	startServer()
 	time.Sleep(1e9)
 }

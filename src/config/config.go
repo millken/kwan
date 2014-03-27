@@ -35,6 +35,7 @@ var configPath string
 var (
 	sites map[Sites]int
 	listen map[int]int
+	vhosts map[int]Vhost
 )
 func init() {
 	flag.StringVar(&configFile, "c", "config.xml", "config file path")
