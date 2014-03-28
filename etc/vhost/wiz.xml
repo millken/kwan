@@ -2,5 +2,6 @@
 <bind>:80</bind>
 <host ip="112.125.239.95" port="0">www.wiz.cn</host>
 <host ip="112.125.239.95" port="0">wiz.cn</host>
+<host ip="115.231.84.89" port="0">cdn.wiz.cn</host>
 </vhost>
 

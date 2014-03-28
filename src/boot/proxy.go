@@ -49,7 +49,10 @@ func (p *Proxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
     copyHeader(rw.Header(), backendResp.Header)
 
     rw.WriteHeader(backendResp.StatusCode)
-    io.Copy(rw, backendResp.Body)
+
+    //rate limiting
+    gLink := NewLink(1024 /* kbps */)
+    io.Copy(rw, gLink.NewLinkReader(backendResp.Body))
     defer backendResp.Body.Close()
 
 }
