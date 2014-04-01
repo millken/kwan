@@ -25,6 +25,7 @@ func NewApp() (a *App) {
 func (a *App) AddServer(s *http.Server) {
 	a.Servers = append(a.Servers, s)
 }
+
 // Listen will inherit or create new listeners. Returns a bool indicating if we
 // inherited listeners. This return value is useful in order to decide if we
 // should instruct the parent process to terminate.

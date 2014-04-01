@@ -2,15 +2,15 @@ package main
 
 import (
 	"boot"
-	"net/http"
-	"fmt"
 	"config"
+	"fmt"
+	"net/http"
 	"strings"
 )
 
 type Source struct {
-	Ip string
-	Port int
+	Ip     string
+	Port   int
 	UseSsl bool
 }
 
@@ -28,13 +28,14 @@ func startServer() {
 func serverHandler(port int) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("Routing %s%s\n", r.Host, r.URL)
+		//fmt.Printf("Routing %s%s\n", r.Host, r.URL)
 		domain := strings.Split(r.Host, ":")[0]
 		vhost, found := config.MatchingVhost("0.0.0.0", port, domain)
 		if found {
 			src, _ := getSourceIP(domain, port, vhost)
 			proxy := boot.NewProxy()
 			proxy.AddBackend(src.Ip, 80)
+			proxy.SetVhost(vhost)
 			proxy.ServeHTTP(w, r)
 		}
 

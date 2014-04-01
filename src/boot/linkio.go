@@ -102,4 +102,3 @@ func (l *LinkReader) Read(buf []byte) (n int, err error) {
 
 	return
 }
-

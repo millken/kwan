@@ -1,20 +1,19 @@
 package main
 
 import (
+	"config"
 	"fmt"
 	"os"
 	"runtime"
 	"strings"
-	"config"
 	"time"
 )
 
 const (
-	QUEUE_LENGTH      = 65535
-	CONFIG_INTERVAL   = 20
-	DEFAULT_USERAGENT = "abench tester"
-	RC4_KEY           = "x6l4^j)2"
+	QUEUE_LENGTH    = 65535
+	CONFIG_INTERVAL = 20
 )
+
 var VERSION string = "1.39"
 var gitVersion string
 var THREADS = 8

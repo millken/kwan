@@ -19,7 +19,7 @@ func MatchingVhost(ip string, port int, domain string) (result Vhost, found bool
 		}else{
 			result = vhosts[index]
 			found = true
-			fmt.Printf("found : %v\n", result)
+			//fmt.Printf("found : %v\n", result)
 			return
 		}
 	}

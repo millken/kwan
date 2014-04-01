@@ -14,6 +14,17 @@ type Vhost struct {
 	//XMLName xml.Name `xml:"vhost"`
 	Bind []string `xml:"bind"`
 	Host []Host   `xml:"host"`
+	Cache []Cache `xml:"cache"`
+}
+
+type Cache struct {
+	Base bool `xml:"base,attr"`
+	Time int `xml:"time,attr"`
+	FileExt string `xml:"file_ext,attr"`
+	Static bool `xml:"static,attr"`
+ 	Nocache bool `xml:"nocache,attr"`
+ 	Url string `xml:"url,attr"`
+ 	Regex string `xml:"regex,attr"`
 }
 
 type Host struct {
