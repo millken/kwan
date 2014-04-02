@@ -12,12 +12,9 @@ import (
 	"store"
 	"strings"
 	"structs"
-	"sync"
-	"time"
-	//"strconv"
+    "time"
 )
-
-var mutex sync.Mutex
+const DefaultTimeFormat = "2006-01-02 15:04:05.999999999"
 
 type Proxy struct {
 	backends []*url.URL
@@ -58,7 +55,7 @@ func (p *Proxy) SetVhost(vhost config.Vhost) {
 
 func (p *Proxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
-	cancache, _ := p.checkCacheRule(req)
+	cancache, cacheRule := p.checkCacheRule(req)
 	cacheKey := p.cacheKey(req)
 	if cancache {
 		data, err := p.Store.Get(cacheKey)
@@ -68,7 +65,7 @@ func (p *Proxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		} else { // Cache miss. Proxy and cache.
 			fmt.Printf("cache miss: %s\n", err)
 			rw.Header().Add("Cache", "miss")
-			p.proxyAndCache(cacheKey, rw, req)
+			p.proxyAndCache(cacheKey, cacheRule, rw, req)
 		}
 	} else {
 		backendResp, err := p.proxy(rw, req)
@@ -90,7 +87,7 @@ func (p *Proxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 }
 
-func (p *Proxy) proxyAndCache(cacheKey string, rw http.ResponseWriter, req *http.Request) {
+func (p *Proxy) proxyAndCache(cacheKey string, cacheRule config.Cache, rw http.ResponseWriter, req *http.Request) {
 
 	backendResp, err := p.proxy(rw, req)
 
@@ -132,7 +129,7 @@ func (p *Proxy) proxyAndCache(cacheKey string, rw http.ResponseWriter, req *http
 		}
 
 		rw.Write(body)
-		go p.cache(cacheKey, cached_response)
+		go p.cache(cacheKey, cacheRule, cached_response)
 	} else { // error. Copy body.
 		fmt.Println("Error Status", backendResp.StatusCode)
 		rw.WriteHeader(backendResp.StatusCode)
@@ -141,15 +138,32 @@ func (p *Proxy) proxyAndCache(cacheKey string, rw http.ResponseWriter, req *http
 
 }
 
-func (p *Proxy) cache(key string, cached_response *structs.CachedResponse) {
+func (p *Proxy) cache(key string, cacheRule config.Cache, cached_response *structs.CachedResponse) {
 	// encode
-	fmt.Println("CACHE NOW", cached_response.Headers)
-	encoded, _ := serializeResponse(cached_response)
-	p.Store.Set(key, 60, encoded)
+	encoded, err := serializeResponse(cached_response)
+	if err != nil {
+        p.Store.Set(key, cacheRule.Time, encoded)
+    }
 }
 
 func (p *Proxy) serveFromCache(data []byte, rw http.ResponseWriter, req *http.Request) {
 	cached_response, _ := deserializeResponse(data)
+    if req.Header.Get("If-None-Match") != "" && cached_response.Headers.Get("Etag") == req.Header.Get("If-None-Match") {
+        rw.WriteHeader(http.StatusNotModified)
+        rw.Write([]byte{})
+        return    
+    }
+    if req.Header.Get("If-Modified-Since") != "" && cached_response.Headers.Get("Last-Modified") != "" {
+        t1,err1 := time.Parse(DefaultTimeFormat, req.Header.Get("If-Modified-Since"))
+        t2,err2 := time.Parse(DefaultTimeFormat, cached_response.Headers.Get("Last-Modified"))
+        if err1 != nil && err2 != nil {
+            if t2.Unix() <= t1.Unix() {
+                rw.WriteHeader(http.StatusNotModified)
+                rw.Write([]byte{})
+                return                 
+            }
+        }
+    }
 	/* Copy headers
 	------------------------------------*/
 	copyHeader(rw.Header(), cached_response.Headers)
@@ -182,24 +196,9 @@ func (p *Proxy) checkCacheRule(req *http.Request) (cache bool, result config.Cac
 	return
 }
 
-// This needs a mutex or channel/goroutine
-func (p *Proxy) initializePrefix(hostName string, fn func(int)) (prefix int) {
-	mutex.Lock()
-	prefix = p.Prefixes[hostName]
-	if prefix == 0 { // start prefix as unix timestamp
-		ts := time.Now().Unix()
-		prefix = int(ts)
-		p.Prefixes[hostName] = prefix
-	}
-	fn(prefix)
-	mutex.Unlock()
-	return
-}
 
 func (p *Proxy) cacheKey(req *http.Request) string {
 	key := req.URL.String()
-	//prefix := p.initializePrefix(req.Host, func(int){})
-	//stprefix := strconv.Itoa(prefix)
 	s := []string{"caching", req.Method, req.Host, key}
 	return strings.Join(s, ":")
 }

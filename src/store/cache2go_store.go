@@ -3,7 +3,6 @@ package store
 import (
   "time"
   "github.com/millken/cache2go"
-  "fmt"
 )
 
 type Cache2goStore struct {
@@ -26,7 +25,6 @@ func (s *Cache2goStore) Get(key string) (data []byte, err error) {
 }
 
 func (s *Cache2goStore) Set(key string, expiretime int32, data []byte) (error) {
-  fmt.Println("enter cache2go Set %s", key)
   val := Cache2goStruct{data}
   s.client.Add(key, time.Duration(expiretime) * time.Second, &val )
   return nil

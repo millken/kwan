@@ -19,7 +19,7 @@ type Vhost struct {
 
 type Cache struct {
 	Base bool `xml:"base,attr"`
-	Time int `xml:"time,attr"`
+	Time int32 `xml:"time,attr"`
 	FileExt string `xml:"file_ext,attr"`
 	Static bool `xml:"static,attr"`
  	Nocache bool `xml:"nocache,attr"`
