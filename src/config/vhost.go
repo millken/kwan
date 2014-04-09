@@ -15,6 +15,7 @@ type Vhost struct {
 	Bind []string `xml:"bind"`
 	Host []Host   `xml:"host"`
 	Cache []Cache `xml:"cache"`
+	Ssl Ssl `xml:"ssl"`
 }
 
 type Cache struct {
@@ -27,6 +28,10 @@ type Cache struct {
  	Regex string `xml:"regex,attr"`
 }
 
+type Ssl struct {
+	Keyfile string `xml:"key_file,attr"`
+	Certfile string `xml:"cert_file,attr"`
+}
 type Host struct {
 	Ip     string `xml:"ip,attr"`
 	Port   int    `xml:"port,attr"`

@@ -9,11 +9,13 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"regexp"
 	"store"
 	"strings"
 	"structs"
-    "time"
+	"time"
 )
+
 const DefaultTimeFormat = "2006-01-02 15:04:05.999999999"
 
 type Proxy struct {
@@ -111,7 +113,7 @@ func (p *Proxy) proxyAndCache(cacheKey string, cacheRule config.Cache, rw http.R
 	body = cached_response.Body
 
 	if backendResp.StatusCode >= 200 && backendResp.StatusCode < 300 {
-		fmt.Println("SUCCESS")
+		//fmt.Println("SUCCESS")
 		if req.Method == "HEAD" || req.Method == "OPTIONS" {
 			// log.Println("NO BODY", req.Method)
 			rw.Write([]byte{})
@@ -141,29 +143,32 @@ func (p *Proxy) proxyAndCache(cacheKey string, cacheRule config.Cache, rw http.R
 func (p *Proxy) cache(key string, cacheRule config.Cache, cached_response *structs.CachedResponse) {
 	// encode
 	encoded, err := serializeResponse(cached_response)
-	if err != nil {
-        p.Store.Set(key, cacheRule.Time, encoded)
-    }
+	if err == nil {
+		fmt.Printf("proxy set cache ok %s %d\n", key, cacheRule.Time)
+		p.Store.Set(key, cacheRule.Time, encoded)
+	} else {
+		fmt.Printf("proxy set cache failue :%s\n", err)
+	}
 }
 
 func (p *Proxy) serveFromCache(data []byte, rw http.ResponseWriter, req *http.Request) {
 	cached_response, _ := deserializeResponse(data)
-    if req.Header.Get("If-None-Match") != "" && cached_response.Headers.Get("Etag") == req.Header.Get("If-None-Match") {
-        rw.WriteHeader(http.StatusNotModified)
-        rw.Write([]byte{})
-        return    
-    }
-    if req.Header.Get("If-Modified-Since") != "" && cached_response.Headers.Get("Last-Modified") != "" {
-        t1,err1 := time.Parse(DefaultTimeFormat, req.Header.Get("If-Modified-Since"))
-        t2,err2 := time.Parse(DefaultTimeFormat, cached_response.Headers.Get("Last-Modified"))
-        if err1 != nil && err2 != nil {
-            if t2.Unix() <= t1.Unix() {
-                rw.WriteHeader(http.StatusNotModified)
-                rw.Write([]byte{})
-                return                 
-            }
-        }
-    }
+	if req.Header.Get("If-None-Match") != "" && cached_response.Headers.Get("Etag") == req.Header.Get("If-None-Match") {
+		rw.WriteHeader(http.StatusNotModified)
+		rw.Write([]byte{})
+		return
+	}
+	if req.Header.Get("If-Modified-Since") != "" && cached_response.Headers.Get("Last-Modified") != "" {
+		t1, err1 := time.Parse(DefaultTimeFormat, req.Header.Get("If-Modified-Since"))
+		t2, err2 := time.Parse(DefaultTimeFormat, cached_response.Headers.Get("Last-Modified"))
+		if err1 != nil && err2 != nil {
+			if t2.Unix() <= t1.Unix() {
+				rw.WriteHeader(http.StatusNotModified)
+				rw.Write([]byte{})
+				return
+			}
+		}
+	}
 	/* Copy headers
 	------------------------------------*/
 	copyHeader(rw.Header(), cached_response.Headers)
@@ -182,20 +187,24 @@ func (p *Proxy) checkCacheRule(req *http.Request) (cache bool, result config.Cac
 	uri := req.URL
 	url := uri.String()
 	fileext := strings.Replace(filepath.Ext(uri.Path), ".", "", 1)
+	re := regexp.MustCompile("no-cache|no-store|private") //Pragma?
 	for _, cr := range p.Vhost.Cache {
-		fmt.Printf("cache rule[%s]: %s\n", fileext, cr.FileExt)
 		if cr.Url != "" && strings.Index(url, cr.Url) != -1 {
-			cache = true
-			result = cr
+			if cr.Static || (!cr.Static && re.FindStringIndex(req.Header.Get("Cache-Control")) == nil) {
+				cache = true
+				result = cr
+			}
+
 		}
 		if cr.FileExt != "" && strings.Index(cr.FileExt, fileext) != -1 {
-			cache = true
-			result = cr
+			if cr.Static || (!cr.Static && re.FindStringIndex(req.Header.Get("Cache-Control")) == nil) {
+				cache = true
+				result = cr
+			}
 		}
 	}
 	return
 }
-
 
 func (p *Proxy) cacheKey(req *http.Request) string {
 	key := req.URL.String()

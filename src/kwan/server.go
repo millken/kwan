@@ -28,7 +28,7 @@ func startServer() {
 func serverHandler(port int) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		//fmt.Printf("Routing %s%s\n", r.Host, r.URL)
+		fmt.Printf("Routing %s%s : %s\n", r.Host, r.URL, r.RemoteAddr)
 		domain := strings.Split(r.Host, ":")[0]
 		vhost, found := config.MatchingVhost("0.0.0.0", port, domain)
 		if found {
