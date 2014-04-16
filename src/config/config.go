@@ -1,7 +1,6 @@
 package config
 
 import (
-	//"github.com/valyala/ybc/bindings/go/ybc"
 	"encoding/xml"
 	"flag"
 	"fmt"
@@ -34,7 +33,7 @@ var configFile string
 var configPath string
 var (
 	sites map[Sites]int
-	listen map[int]int
+	listen map[string]int
 	vhosts map[int]Vhost
 )
 func init() {
@@ -72,6 +71,6 @@ func Read() {
 }
 
 
-func GetListen() map[int]int {
+func GetListen() map[string]int {
 	return listen
 }

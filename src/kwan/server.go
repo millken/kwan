@@ -10,19 +10,19 @@ import (
 
 
 func startServer() {
-	for port, _ := range config.GetListen() {
-		fmt.Printf("start listen : %d\n", port)
-		go listen(port)
+	for addr, bindnum := range config.GetListen() {
+		fmt.Printf("start listen[%d] : %s\n", bindnum, addr)
+		go listen(addr)
 	}
 }
 
-func listen(port int) {
+func listen(addr string) {
 	pipeline := falcore.NewPipeline()
 
 	// upstream
 	//pipeline.Upstream.PushBack(helloFilter)
 	pipeline.Upstream.PushBack(&webfilter.VhostFilter{})	
-	server := falcore.NewServer(port, pipeline)
+	server := falcore.NewServer(addr, pipeline)
 	//server.CompletionCallback = reqCB
 	if err := server.ListenAndServe(); err != nil {
 		fmt.Println("Could not start server:", err)

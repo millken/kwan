@@ -40,7 +40,7 @@ type Host struct {
 
 func LoadVhostDir() {
 	newsites := make(map[Sites]int)
-	newlisten	:= make(map[int]int)
+	newlisten	:= make(map[string]int)
 	newvhosts := make(map[int]Vhost)
 	index := 1000	
 	for _, dir := range config.VhostDir {
@@ -65,7 +65,7 @@ func LoadVhostDir() {
 			newvhosts[index] = vhost
 				for _, bind := range vhost.Bind {
 						ip, port := getBindIpPort(bind)
-						newlisten[port] ++
+						newlisten[fmt.Sprintf("%s:%v", ip, port)] ++
 						for _, host := range vhost.Host {
 							fmt.Printf("%s:%d%s\n", ip, port, host.Domain)
 							newsites[Sites{ip, port, host.Domain}] = index

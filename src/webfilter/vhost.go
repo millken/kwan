@@ -14,9 +14,10 @@ type VhostFilter struct {
 func (vh *VhostFilter) FilterRequest(req *falcore.Request) (res *http.Response) {
 	sHost, sPort := "", 80
 	host, port := filter.SplitHostPort(req.HttpRequest.Host, 80)
-	fmt.Printf("Routing %s  = %s : %s\n", host, req.HttpRequest.URL, req.RemoteAddr)
+	dHost, dPort := filter.SplitHostPort(req.ServerAddr, 80)
+	fmt.Printf("Routing %s%s : %s => %s\n", req.HttpRequest.Host, req.HttpRequest.URL, req.RemoteAddr, req.ServerAddr)
 
-	vhost, found := config.MatchingVhost("0.0.0.0", port, host)
+	vhost, found := config.MatchingVhost(dHost, dPort, host)
 	if found {
 		sHost, sPort = GetSourceIP(host, port, vhost)
 
