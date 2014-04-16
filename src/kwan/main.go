@@ -6,7 +6,6 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"time"
 )
 
 const (
@@ -51,5 +50,6 @@ func main() {
 
 	config.Read()
 	startServer()
-	time.Sleep(1e9)
+	waitForeverCh := make(chan int)
+	<-waitForeverCh
 }

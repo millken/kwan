@@ -2,7 +2,7 @@
 <bind>:80</bind>
 <host ip="112.125.239.95" port="0">www.wiz.cn</host>
 <host ip="112.125.239.95" port="0">wiz.cn</host>
-<host ip="115.231.84.89" port="0">cdn.wiz.cn</host>
+<host ip="124.126.126.108" port="0">cdn.wiz.cn</host>
 <limit speed="56" max_per_ip="100" />
 <cache base="true" time="3600" />
 <cache file_ext="png" time="10" />
