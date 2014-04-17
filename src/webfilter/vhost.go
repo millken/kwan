@@ -5,26 +5,24 @@ import (
 	"github.com/fitstar/falcore/filter"
 	"config"
 	"net/http"
-	"time"
-	"fmt"
+	//"fmt"
 )
 type VhostFilter struct {
 }
  
 func (vh *VhostFilter) FilterRequest(req *falcore.Request) (res *http.Response) {
-	sHost, sPort := "", 80
-	host, port := filter.SplitHostPort(req.HttpRequest.Host, 80)
+	host, _ := filter.SplitHostPort(req.HttpRequest.Host, 80)
 	dHost, dPort := filter.SplitHostPort(req.ServerAddr, 80)
-	fmt.Printf("Routing %s%s : %s => %s\n", req.HttpRequest.Host, req.HttpRequest.URL, req.RemoteAddr, req.ServerAddr)
+	//fmt.Printf("Routing %s%s : %s => %s\n", req.HttpRequest.Host, req.HttpRequest.URL, req.RemoteAddr, req.ServerAddr)
 
 	vhost, found := config.MatchingVhost(dHost, dPort, host)
 	if found {
-		sHost, sPort = GetSourceIP(host, port, vhost)
-
+		//first try read cache
+		cachefilter := NewCacheFilter()
+		cachefilter.SetVhost(vhost)
+		res = cachefilter.FilterRequest(req)
 	}
-	var timeout time.Duration = 3 * time.Second
-	proxyFilter := filter.NewUpstream(filter.NewUpstreamTransport(sHost, sPort, timeout, nil))
-	res = proxyFilter.FilterRequest(req)
+
 	return 
 }
 

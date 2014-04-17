@@ -15,7 +15,7 @@ func MatchingVhost(ip string, port int, domain string) (result Vhost, found bool
 	}
 	for _, site := range matches {
 		if index := sites[site]; index < 1000 {
-			fmt.Printf("on %s:%d, no match %s\n", ip, port, domain)
+			//fmt.Printf("on %s:%d, no match %s\n", ip, port, domain)
 		}else{
 			result = vhosts[index]
 			found = true

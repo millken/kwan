@@ -7,7 +7,7 @@ import(
 )
 
 type CachedResponse struct {
-  Status string
+  StatusCode int
   ContentLength int64
   Headers http.Header
   Body []byte
@@ -22,7 +22,7 @@ func NewCachedResponse(res *http.Response) (response *CachedResponse) {
   response = &CachedResponse{
     Body: body, 
     Headers: res.Header, 
-    Status: res.Status,
+    StatusCode: res.StatusCode,
     ContentLength: res.ContentLength,
   }
   
