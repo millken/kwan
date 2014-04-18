@@ -10,8 +10,8 @@ import (
 	"structs"
 	"path/filepath"
 	"regexp"
-	//"io/ioutil"
-	//"bytes"
+	"io/ioutil"
+	"bytes"
 	"strings"	
 	"fmt"
 	"time"
@@ -43,6 +43,20 @@ func (c *CacheFilter) SetStore(s store.Store) {
 func (c *CacheFilter) checkCacheRule(req *http.Request) (cache bool, result config.Cache) {
 	cache = false
 	result = config.Cache{}
+
+    uncacheable_headers := []string{
+        "Proxy-Authenticate",
+        "Proxy-Authorization",
+        "TE",
+        "Trailers",
+        "Upgrade",
+    }
+    for _, uncacheable_header := range uncacheable_headers {
+    	if req.Header.Get(uncacheable_header) != "" {
+    		return
+    	}
+    }
+
 	uri := req.URL
 	url := uri.String()
 	fileext := strings.Replace(filepath.Ext(uri.Path), ".", "", 1)
@@ -123,8 +137,8 @@ func (c *CacheFilter) serveFromCache(data []byte, request *falcore.Request) (res
 		res.Body = nil
 		request.CurrentStage.Status = 0 // Success
 	} else {
-			//res.Body = ioutil.NopCloser(bytes.NewBuffer(cached_response.Body))
-			//res.ContentLength = cached_response.ContentLength
+			res.Body = ioutil.NopCloser(bytes.NewBuffer(cached_response.Body))
+			res.ContentLength = cached_response.ContentLength
 			request.CurrentStage.Status = 0 // Success		
 	}
 	return
@@ -132,7 +146,12 @@ func (c *CacheFilter) serveFromCache(data []byte, request *falcore.Request) (res
 func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Response) {
 	req := request.HttpRequest
 	sHost, sPort := "", 80
-	host, port := filter.SplitHostPort(req.Host, 80)	
+	host, port := filter.SplitHostPort(req.Host, 80)
+	if strings.Index("GET|POST", req.Method)  == -1 {
+		res = falcore.StringResponse(req, 405, nil, "Method Not Allowed")
+		request.CurrentStage.Status = 0
+		return
+	}
 	cancache, cacheRule := c.checkCacheRule(req)
 	cacheKey := c.cacheKey(req)
 	if cancache {
@@ -142,21 +161,20 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 			res.Header.Set("X-Cache", "Hit")
 		} else { // Cache miss. Proxy and cache.
 			//res = falcore.ByteResponse(req, 100, nil, []byte{})
-			falcore.Info("enter Miss")
 			sHost, sPort = GetSourceIP(host, port, c.Vhost)
 			var timeout time.Duration = 3 * time.Second
 			proxyFilter := filter.NewUpstream(filter.NewUpstreamTransport(sHost, sPort, timeout, nil))
-			//request.HttpRequest.Header.Del("If-None-Match")
-			//request.HttpRequest.Header.Del("If-Modified-Since")
+			request.HttpRequest.Header.Del("If-None-Match")
+			request.HttpRequest.Header.Del("If-Modified-Since")
 			request.HttpRequest.Header.Set("Cache-Control", "no-cache, no-store")
 			request.HttpRequest.Header.Set("Pragma", "no-cache")
 
 
 			res = proxyFilter.FilterRequest(request)
-			
 			if res.StatusCode >= 200 && res.StatusCode < 300 {
 				cached_response := structs.NewCachedResponse(res)
 				go c.cache(cacheKey, cacheRule, cached_response)
+				res.Body = ioutil.NopCloser(bytes.NewBuffer(cached_response.Body))
 			}
 			res.Header.Set("X-Cache", "Miss")
 		}
@@ -168,6 +186,11 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 	}
 
 	return 
+}
+
+func (c *CacheFilter) FilterResponse(request *falcore.Request, res *http.Response) {
+	//req := request.HttpRequest
+	
 }
 
 func serializeResponse(res *structs.CachedResponse) (raw []byte, err error) {
