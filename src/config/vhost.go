@@ -15,7 +15,7 @@ type Vhost struct {
 	Bind []string `xml:"bind"`
 	Host []Host   `xml:"host"`
 	Cache []Cache `xml:"cache"`
-	Ssl Ssl `xml:"ssl"`
+	Ssl []Ssl `xml:"ssl"`
 }
 
 type Cache struct {
@@ -29,6 +29,8 @@ type Cache struct {
 }
 
 type Ssl struct {
+	Bind string `xml:"bind,attr"`
+	Sort int `xml:"sort,attr"`
 	Keyfile string `xml:"key_file,attr"`
 	Certfile string `xml:"cert_file,attr"`
 }
@@ -41,6 +43,7 @@ type Host struct {
 func LoadVhostDir() {
 	newsites := make(map[Sites]int)
 	newlisten	:= make(map[string]int)
+	newssl	:= make(map[string][]Ssl)
 	newvhosts := make(map[int]Vhost)
 	index := 1000	
 	for _, dir := range config.VhostDir {
@@ -67,10 +70,18 @@ func LoadVhostDir() {
 						ip, port := getBindIpPort(bind)
 						newlisten[fmt.Sprintf("%s:%v", ip, port)] ++
 						for _, host := range vhost.Host {
-							fmt.Printf("%s:%d%s\n", ip, port, host.Domain)
+							//fmt.Printf("%s:%d%s\n", ip, port, host.Domain)
 							newsites[Sites{ip, port, host.Domain}] = index
 						}
 						
+				}
+				for _, ssl := range vhost.Ssl {
+					ip, port := getBindIpPort(ssl.Bind)
+					iport := fmt.Sprintf("%s:%v", ip, port)
+					newssl[iport] = append(newssl[iport], ssl)
+					for _, host := range vhost.Host {
+						newsites[Sites{ip, port, host.Domain}] = index
+					}					
 				}
 			config.Vhosts = append(config.Vhosts, vhost)
 			index++ 
@@ -79,6 +90,7 @@ func LoadVhostDir() {
 	sites = newsites
 	listen = newlisten
 	vhosts = newvhosts
+	ssl_listen = newssl
 }
 
 

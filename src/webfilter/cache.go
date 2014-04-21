@@ -69,12 +69,15 @@ func (c *CacheFilter) checkCacheRule(req *http.Request) (cache bool, result conf
 			}
 
 		}
-		if cr.FileExt != "" && strings.Index(cr.FileExt, fileext) != -1 {
+		if fileext != "" && strings.Index(cr.FileExt, fileext) != -1 {
 			if cr.Static || (!cr.Static && re.FindStringIndex(req.Header.Get("Cache-Control")) == nil) {
 				cache = true
 				result = cr
 			}
 		}
+	}
+	if cache {
+		fmt.Printf("hit cache Rule: %v\n", result)
 	}
 	return
 }
@@ -146,7 +149,9 @@ func (c *CacheFilter) serveFromCache(data []byte, request *falcore.Request) (res
 func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Response) {
 	req := request.HttpRequest
 	sHost, sPort := "", 80
-	host, port := filter.SplitHostPort(req.Host, 80)
+	_, dPort := SplitHostPort(request.ServerAddr, 80)
+	host, port := SplitHostPort(req.Host, dPort)
+
 	if strings.Index("GET|POST", req.Method)  == -1 {
 		res = falcore.StringResponse(req, 405, nil, "Method Not Allowed")
 		request.CurrentStage.Status = 0
@@ -154,15 +159,18 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 	}
 	cancache, cacheRule := c.checkCacheRule(req)
 	cacheKey := c.cacheKey(req)
+	sHost, sPort = GetSourceIP(host, port, c.Vhost)
+	var timeout time.Duration = 3 * time.Second
+
+	//request.HttpRequest.URL.Scheme = "https"
+	//request.HttpRequest.URL.Host = host
 	if cancache {
 		data, err := c.Store.Get(cacheKey)
 		if err == nil { // cache hit. Serve it.
 			res = c.serveFromCache(data, request)
-			res.Header.Set("X-Cache", "Hit")
+			res.Header.Set("X-Cache", "Hit from " + config.GetHostname())
 		} else { // Cache miss. Proxy and cache.
 			//res = falcore.ByteResponse(req, 100, nil, []byte{})
-			sHost, sPort = GetSourceIP(host, port, c.Vhost)
-			var timeout time.Duration = 3 * time.Second
 			proxyFilter := filter.NewUpstream(filter.NewUpstreamTransport(sHost, sPort, timeout, nil))
 			request.HttpRequest.Header.Del("If-None-Match")
 			request.HttpRequest.Header.Del("If-Modified-Since")
@@ -176,11 +184,9 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 				go c.cache(cacheKey, cacheRule, cached_response)
 				res.Body = ioutil.NopCloser(bytes.NewBuffer(cached_response.Body))
 			}
-			res.Header.Set("X-Cache", "Miss")
+			res.Header.Set("X-Cache", "Miss from " + config.GetHostname())
 		}
 	}else{
-		sHost, sPort = GetSourceIP(host, port, c.Vhost)
-		var timeout time.Duration = 3 * time.Second
 		proxyFilter := filter.NewUpstream(filter.NewUpstreamTransport(sHost, sPort, timeout, nil))
 		res = proxyFilter.FilterRequest(request)			
 	}

@@ -15,6 +15,7 @@ type Config struct {
 	Timeout  time.Duration `xml:"timeout"`
 	Vhosts	[]Vhost
 	VhostDir []string      `xml:"vhost_dir"`
+	Hostname  string  `xml:"hostname"`
 }
 
 
@@ -34,6 +35,7 @@ var configPath string
 var (
 	sites map[Sites]int
 	listen map[string]int
+	ssl_listen map[string][]Ssl
 	vhosts map[int]Vhost
 )
 func init() {
@@ -66,11 +68,19 @@ func Read() {
 	fmt.Printf("configPath:%s\n", configPath)
 
 	LoadVhostDir()
-	fmt.Printf("config:%v\n", config)
-	fmt.Printf("sites:%v\n", sites)
+	//fmt.Printf("config:%v\n", config)
+	//fmt.Printf("sites:%v\n", sites)
 }
 
 
 func GetListen() map[string]int {
 	return listen
+}
+
+func GetSslListen() map[string][]Ssl {
+	return ssl_listen
+}
+
+func GetHostname() string {
+	return config.Hostname
 }

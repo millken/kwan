@@ -10,6 +10,7 @@ bin
 pkg
 _test
 github.com
+vhost
 
 # Architecture specific extensions/prefixes
 *.[568vq]
@@ -25,3 +26,5 @@ _testmain.go
 
 *.exe
 *.zip
+*.key
+*.cer

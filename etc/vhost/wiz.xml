@@ -7,6 +7,5 @@
 <cache base="true" time="3600" />
 <cache file_ext="png" time="10" />
 <cache file_ext="jpg|js|css|gif|html" static="true" time="3600" />
-<ssl key_file="" cert_file="" />
 </vhost>
 

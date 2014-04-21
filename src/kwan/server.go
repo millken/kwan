@@ -14,6 +14,17 @@ func startServer() {
 		fmt.Printf("start listen[%d] : %s\n", bindnum, addr)
 		go listen(addr)
 	}
+	for addr, ssls := range config.GetSslListen() {
+		fmt.Printf("start ssl listen : %s\n", addr)
+		certs := make([]falcore.Certificates, 0)
+		for _, ssl := range ssls {
+			certs = append(certs, falcore.Certificates{
+					CertFile: ssl.Certfile,
+					KeyFile:  ssl.Keyfile,
+				})
+		}
+		go ssllisten(addr, certs)
+	}	
 }
 
 func listen(addr string) {
@@ -25,6 +36,16 @@ func listen(addr string) {
 	server := falcore.NewServer(addr, pipeline)
 	//server.CompletionCallback = reqCB
 	if err := server.ListenAndServe(); err != nil {
+		fmt.Println("Could not start server:", err)
+	}
+}
+
+func ssllisten(addr string, certs []falcore.Certificates) {
+	pipeline := falcore.NewPipeline()
+	pipeline.Upstream.PushBack(&webfilter.VhostFilter{})	
+	server := falcore.NewServer(addr, pipeline)
+
+	if err := server.ListenAndServeTLSSNI(certs); err != nil {
 		fmt.Println("Could not start server:", err)
 	}
 }

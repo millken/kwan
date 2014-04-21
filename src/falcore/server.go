@@ -37,7 +37,10 @@ type Server struct {
 	writeBufferPool     *utils.WriteBufferPool
 	PanicHandler        func(conn net.Conn, err interface{})
 }
-
+type Certificates struct {
+	CertFile	string
+	KeyFile		string
+}
 // An optional callback called after each request is fully processed
 // and delivered to the client.  At this point, it's too late to
 // alter the response.  For that, use a ResponseFilter.
@@ -129,6 +132,38 @@ func (srv *Server) ListenAndServeTLS(certFile, keyFile string) error {
 		return err
 	}
 
+	if srv.listener == nil {
+		if err := srv.socketListen(); err != nil {
+			return err
+		}
+	}
+
+	srv.listener = tls.NewListener(srv.listener, config)
+
+	return srv.serve()
+}
+
+// Start the server using TLS for serving HTTPS.
+func (srv *Server) ListenAndServeTLSSNI(certs []Certificates) error {
+	if srv.Addr == "" {
+		srv.Addr = ":https"
+	}
+	config := &tls.Config{
+		Rand:       rand.Reader,
+		Time:       time.Now,
+		NextProtos: []string{"http/1.1"},
+	}
+
+	var err error
+	config.Certificates = make([]tls.Certificate, len(certs))
+	for i, v := range certs {
+		config.Certificates[i], err = tls.LoadX509KeyPair(v.CertFile, v.KeyFile)
+		if err != nil {
+			return err
+		}
+	}
+	config.BuildNameToCertificate()
+	
 	if srv.listener == nil {
 		if err := srv.socketListen(); err != nil {
 			return err
