@@ -32,8 +32,8 @@ func GetSourceIP(domain string, port int, vhost config.Vhost) (sHost string, sPo
 	sHost = ""
 	sPort = 0
 	domains := []string{
-		domain,
 		config.WildcardOf(domain),
+		domain,
 	}
 	for _, dom := range domains {
 		for _, host := range vhost.Host {

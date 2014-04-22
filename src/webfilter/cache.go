@@ -77,7 +77,7 @@ func (c *CacheFilter) checkCacheRule(req *http.Request) (cache bool, result conf
 		}
 	}
 	if cache {
-		fmt.Printf("hit cache Rule: %v\n", result)
+		fmt.Printf("hit cache Rule: %s => %v\n", url, result)
 	}
 	return
 }
@@ -160,10 +160,13 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 	cancache, cacheRule := c.checkCacheRule(req)
 	cacheKey := c.cacheKey(req)
 	sHost, sPort = GetSourceIP(host, port, c.Vhost)
+	if sPort != 443 && req.URL.Scheme == "https" {
+		request.HttpRequest.URL.Scheme = "http"
+	}
+	//falcore.Debug("source : %s:%d\n", sHost, sPort)
 	var timeout time.Duration = 3 * time.Second
 
-	//request.HttpRequest.URL.Scheme = "https"
-	//request.HttpRequest.URL.Host = host
+	request.HttpRequest.URL.Host = host
 	if cancache {
 		data, err := c.Store.Get(cacheKey)
 		if err == nil { // cache hit. Serve it.
