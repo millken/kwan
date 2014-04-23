@@ -5,9 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"github.com/fitstar/falcore"
+	"github.com/fitstar/falcore/utils"
 	"webfilter"
 )
 
+var (
+	perIpConnTracker = utils.CreatePerIpConnTracker()
+)
 
 func startServer() {
 	for addr, bindnum := range config.GetListen() {
