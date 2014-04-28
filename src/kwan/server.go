@@ -4,13 +4,8 @@ import (
 	"config"
 	"fmt"
 	"net/http"
-	"github.com/fitstar/falcore"
-	"github.com/fitstar/falcore/utils"
+	"github.com/millken/falcore"
 	"webfilter"
-)
-
-var (
-	perIpConnTracker = utils.CreatePerIpConnTracker()
 )
 
 func startServer() {

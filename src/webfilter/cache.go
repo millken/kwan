@@ -1,8 +1,8 @@
 package webfilter
 
 import (
-	"github.com/fitstar/falcore"
-	"github.com/fitstar/falcore/filter"
+	"github.com/millken/falcore"
+	"github.com/millken/falcore/filter"
 	"github.com/vmihailenco/msgpack"
 	"config"
 	"net/http"

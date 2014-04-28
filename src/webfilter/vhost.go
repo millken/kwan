@@ -1,7 +1,7 @@
 package webfilter
 
 import (
-	"github.com/fitstar/falcore"
+	"github.com/millken/falcore"
 	"strings"
 	"strconv"
 	"config"
