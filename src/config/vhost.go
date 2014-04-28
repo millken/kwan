@@ -26,6 +26,7 @@ type Cache struct {
  	Nocache bool `xml:"nocache,attr"`
  	Url string `xml:"url,attr"`
  	Regex string `xml:"regex,attr"`
+ 	IgnoreParam bool `xml:"ignore_param,attr"`
 }
 
 type Ssl struct {

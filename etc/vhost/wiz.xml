@@ -5,7 +5,7 @@
 <host ip="124.126.126.108" port="0">cdn.wiz.cn</host>
 <limit speed="56" max_per_ip="100" />
 <cache base="true" time="3600" />
-<cache file_ext="png" time="10" />
-<cache file_ext="jpg|js|css|gif|html" static="true" time="3600" />
+<cache file_ext="png" ignore_param="false" time="10" />
+<cache file_ext="jpg|js|css|gif|html" static="true" ignore_param="true" time="3600" />
 </vhost>
 

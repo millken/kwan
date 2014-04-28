@@ -168,6 +168,10 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 
 	request.HttpRequest.URL.Host = host
 	if cancache {
+		tmppos := strings.Index(cacheKey, "?")
+		if cacheRule.IgnoreParam &&  tmppos > 0 {
+			cacheKey = cacheKey[:tmppos]
+		}
 		data, err := c.Store.Get(cacheKey)
 		if err == nil { // cache hit. Serve it.
 			res = c.serveFromCache(data, request)
