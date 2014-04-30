@@ -3,7 +3,6 @@ package main
 import (
 	"config"
 	"fmt"
-	"net/http"
 	"github.com/millken/falcore"
 	"webfilter"
 )
@@ -27,32 +26,34 @@ func startServer() {
 }
 
 func listen(addr string) {
-	pipeline := falcore.NewPipeline()
-
-	// upstream
-	//pipeline.Upstream.PushBack(helloFilter)
-	pipeline.Upstream.PushBack(&webfilter.VhostFilter{})	
+	pipeline := makepipeline("http")
 	server := falcore.NewServer(addr, pipeline)
-	//server.CompletionCallback = reqCB
 	if err := server.ListenAndServe(); err != nil {
 		fmt.Println("Could not start server:", err)
 	}
 }
 
 func ssllisten(addr string, certs []falcore.Certificates) {
-	pipeline := falcore.NewPipeline()
-	pipeline.Upstream.PushBack(&webfilter.VhostFilter{})	
-	server := falcore.NewServer(addr, pipeline)
+	spipeline := makepipeline("https")
+	server := falcore.NewServer(addr, spipeline)
 
 	if err := server.ListenAndServeTLSSNI(certs); err != nil {
 		fmt.Println("Could not start server:", err)
 	}
 }
 
-var helloFilter = falcore.NewRequestFilter(func(req *falcore.Request) *http.Response {
-	return falcore.StringResponse(req.HttpRequest, 200, nil, "hello world!")
-})
-var reqCB = func(req *falcore.Request, res *http.Response) {
-	req.Trace(res) // Prints detailed stats about the request to the log
-}
+func makepipeline(scheme string) *falcore.Pipeline {
+	pipeline := falcore.NewPipeline()
 
+	// upstream
+	//pipeline.Upstream.PushBack(helloFilter)
+	pipeline.Upstream.PushBack(&webfilter.VhostRouter{scheme})
+	
+	var statusfilter webfilter.StatusFilter
+	pipeline.Upstream.PushBack(statusfilter)
+
+	cachefilter := webfilter.NewCacheFilter()
+	pipeline.Upstream.PushBack(cachefilter)
+	//server.CompletionCallback = reqCB	
+	return pipeline
+}

@@ -2,31 +2,33 @@ package webfilter
 
 import (
 	"github.com/millken/falcore"
+	"config"
 	"strings"
 	"strconv"
-	"config"
-	"net/http"
 	"fmt"
 )
-type VhostFilter struct {
+
+type VhostRouter struct {
+	Scheme string
 }
- 
-func (vh *VhostFilter) FilterRequest(req *falcore.Request) (res *http.Response) {
+
+
+func (vr *VhostRouter) SelectPipeline(req *falcore.Request) (pipe falcore.RequestFilter) {
+	req.HttpRequest.URL.Scheme = vr.Scheme
 	host, _ := SplitHostPort(req.HttpRequest.Host, 80)
 	dHost, dPort := SplitHostPort(req.ServerAddr, 80)
 	//fmt.Printf("Routing %s::%s%s : %s => %s\n", req.HttpRequest.Host, req.HttpRequest.URL, req.RemoteAddr, req.ServerAddr)
 
 	vhost, found := config.MatchingVhost(dHost, dPort, host)
 	if found {
-		//first try read cache
-		cachefilter := NewCacheFilter()
-		cachefilter.SetVhost(vhost)
-		res = cachefilter.FilterRequest(req)
+		req.Context["config"] = vhost
+	}else{
+		req.Context["config"] = &config.Vhost{}
 	}
 
-	return 
-}
+	return nil
 
+}
 
 func GetSourceIP(domain string, port int, vhost config.Vhost) (sHost string, sPort int) {
 	sHost = ""

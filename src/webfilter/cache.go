@@ -157,12 +157,11 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 		request.CurrentStage.Status = 0
 		return
 	}
+	c.SetVhost(request.Context["config"].(config.Vhost))
 	cancache, cacheRule := c.checkCacheRule(req)
 	cacheKey := c.cacheKey(req)
 	sHost, sPort = GetSourceIP(host, port, c.Vhost)
-	if sPort != 443 && req.URL.Scheme == "https" {
-		request.HttpRequest.URL.Scheme = "http"
-	}
+
 	//falcore.Debug("source : %s:%d\n", sHost, sPort)
 	var timeout time.Duration = 3 * time.Second
 

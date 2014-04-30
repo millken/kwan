@@ -11,7 +11,8 @@ import (
 )
 
 type Vhost struct {
-	//XMLName xml.Name `xml:"vhost"`
+	Name string `xml:"name,attr"`
+	Status int `xml:"status,attr"`
 	Bind []string `xml:"bind"`
 	Host []Host   `xml:"host"`
 	Cache []Cache `xml:"cache"`
