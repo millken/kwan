@@ -52,6 +52,9 @@ func makepipeline(scheme string) *falcore.Pipeline {
 	var statusfilter webfilter.StatusFilter
 	pipeline.Upstream.PushBack(statusfilter)
 
+	ddosfilter := webfilter.NewDdosFilter()
+	pipeline.Upstream.PushBack(ddosfilter)
+
 	cachefilter := webfilter.NewCacheFilter()
 	pipeline.Upstream.PushBack(cachefilter)
 	//server.CompletionCallback = reqCB	

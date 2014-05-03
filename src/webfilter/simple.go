@@ -1,9 +1,8 @@
-
 package webfilter
 
 import (
-	"github.com/millken/falcore"
 	"config"
+	"github.com/millken/falcore"
 	"net/http"
 )
 
@@ -16,4 +15,3 @@ func (s StatusFilter) FilterRequest(request *falcore.Request) *http.Response {
 	}
 	return nil
 }
-

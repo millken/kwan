@@ -1,17 +1,16 @@
 package webfilter
 
 import (
-	"github.com/millken/falcore"
 	"config"
-	"strings"
-	"strconv"
 	"fmt"
+	"github.com/millken/falcore"
+	"strconv"
+	"strings"
 )
 
 type VhostRouter struct {
 	Scheme string
 }
-
 
 func (vr *VhostRouter) SelectPipeline(req *falcore.Request) (pipe falcore.RequestFilter) {
 	req.HttpRequest.URL.Scheme = vr.Scheme
@@ -22,7 +21,7 @@ func (vr *VhostRouter) SelectPipeline(req *falcore.Request) (pipe falcore.Reques
 	vhost, found := config.MatchingVhost(dHost, dPort, host)
 	if found {
 		req.Context["config"] = vhost
-	}else{
+	} else {
 		req.Context["config"] = &config.Vhost{}
 	}
 
@@ -43,7 +42,7 @@ func GetSourceIP(domain string, port int, vhost config.Vhost) (sHost string, sPo
 				sHost = host.Ip
 				if host.Port == 0 {
 					sPort = port
-				}else{
+				} else {
 					sPort = host.Port
 				}
 			}
@@ -63,7 +62,7 @@ func SplitHostPort(hostPort string, defaultPort int) (string, int) {
 		upstreamPort, err = strconv.Atoi(parts[1])
 		if err != nil {
 			upstreamPort = defaultPort
-			fmt.Printf("Error converting port to int for %s : %s",  upstreamHost, err)
+			fmt.Printf("Error converting port to int for %s : %s", upstreamHost, err)
 		}
 	}
 	return upstreamHost, upstreamPort

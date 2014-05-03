@@ -1,35 +1,34 @@
 package webfilter
 
 import (
+	"bytes"
+	"config"
+	"fmt"
 	"github.com/millken/falcore"
 	"github.com/millken/falcore/filter"
 	"github.com/vmihailenco/msgpack"
-	"config"
+	"io/ioutil"
 	"net/http"
-	"store"
-	"structs"
 	"path/filepath"
 	"regexp"
-	"io/ioutil"
-	"bytes"
-	"strings"	
-	"fmt"
+	"store"
+	"strings"
+	"structs"
 	"time"
 )
 
-
 type CacheFilter struct {
-	Store     store.Store
-	Vhost    config.Vhost
+	Store store.Store
+	Vhost config.Vhost
 }
 
 const DefaultTimeFormat = "2006-01-02 15:04:05.999999999"
 
-func NewCacheFilter()(cf *CacheFilter) {
- 	cf = &CacheFilter{
- 		Store:    store.NewCache2goStore(),
- 	}
- 	return
+func NewCacheFilter() (cf *CacheFilter) {
+	cf = &CacheFilter{
+		Store: store.NewCache2goStore(),
+	}
+	return
 }
 
 func (c *CacheFilter) SetVhost(vhost config.Vhost) {
@@ -44,18 +43,18 @@ func (c *CacheFilter) checkCacheRule(req *http.Request) (cache bool, result conf
 	cache = false
 	result = config.Cache{}
 
-    uncacheable_headers := []string{
-        "Proxy-Authenticate",
-        "Proxy-Authorization",
-        "TE",
-        "Trailers",
-        "Upgrade",
-    }
-    for _, uncacheable_header := range uncacheable_headers {
-    	if req.Header.Get(uncacheable_header) != "" {
-    		return
-    	}
-    }
+	uncacheable_headers := []string{
+		"Proxy-Authenticate",
+		"Proxy-Authorization",
+		"TE",
+		"Trailers",
+		"Upgrade",
+	}
+	for _, uncacheable_header := range uncacheable_headers {
+		if req.Header.Get(uncacheable_header) != "" {
+			return
+		}
+	}
 
 	uri := req.URL
 	url := uri.String()
@@ -76,9 +75,11 @@ func (c *CacheFilter) checkCacheRule(req *http.Request) (cache bool, result conf
 			}
 		}
 	}
-	if cache {
-		fmt.Printf("hit cache Rule: %s => %v\n", url, result)
-	}
+	/*
+		if cache {
+			fmt.Printf("hit cache Rule: %s => %v\n", url, result)
+		}
+	*/
 	return
 }
 
@@ -87,7 +88,6 @@ func (c *CacheFilter) cacheKey(req *http.Request) string {
 	s := []string{"caching", req.Method, req.Host, key}
 	return strings.Join(s, ":")
 }
-
 
 func (c *CacheFilter) cache(key string, cacheRule config.Cache, cached_response *structs.CachedResponse) {
 	// encode
@@ -113,9 +113,9 @@ func (c *CacheFilter) serveFromCache(data []byte, request *falcore.Request) (res
 			res.Body = nil
 			res.ContentLength = 0
 			request.CurrentStage.Status = 0 // Success
-			return 
+			return
 		}
-	}			
+	}
 
 	if req.Header.Get("If-Modified-Since") != "" && cached_response.Headers.Get("Last-Modified") != "" {
 		t1, err1 := time.Parse(DefaultTimeFormat, req.Header.Get("If-Modified-Since"))
@@ -132,7 +132,6 @@ func (c *CacheFilter) serveFromCache(data []byte, request *falcore.Request) (res
 			}
 		}
 	}
-	
 
 	if req.Method == "HEAD" || req.Method == "OPTIONS" {
 		res.Header.Set("Connection", "close")
@@ -140,9 +139,9 @@ func (c *CacheFilter) serveFromCache(data []byte, request *falcore.Request) (res
 		res.Body = nil
 		request.CurrentStage.Status = 0 // Success
 	} else {
-			res.Body = ioutil.NopCloser(bytes.NewBuffer(cached_response.Body))
-			res.ContentLength = cached_response.ContentLength
-			request.CurrentStage.Status = 0 // Success		
+		res.Body = ioutil.NopCloser(bytes.NewBuffer(cached_response.Body))
+		res.ContentLength = cached_response.ContentLength
+		request.CurrentStage.Status = 0 // Success
 	}
 	return
 }
@@ -152,7 +151,7 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 	_, dPort := SplitHostPort(request.ServerAddr, 80)
 	host, port := SplitHostPort(req.Host, dPort)
 
-	if strings.Index("GET|POST", req.Method)  == -1 {
+	if strings.Index("GET|POST", req.Method) == -1 {
 		res = falcore.StringResponse(req, 405, nil, "Method Not Allowed")
 		request.CurrentStage.Status = 0
 		return
@@ -168,13 +167,13 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 	request.HttpRequest.URL.Host = host
 	if cancache {
 		tmppos := strings.Index(cacheKey, "?")
-		if cacheRule.IgnoreParam &&  tmppos > 0 {
+		if cacheRule.IgnoreParam && tmppos > 0 {
 			cacheKey = cacheKey[:tmppos]
 		}
 		data, err := c.Store.Get(cacheKey)
 		if err == nil { // cache hit. Serve it.
 			res = c.serveFromCache(data, request)
-			res.Header.Set("X-Cache", "Hit from " + config.GetHostname())
+			res.Header.Set("X-Cache", "Hit from "+config.GetHostname())
 		} else { // Cache miss. Proxy and cache.
 			//res = falcore.ByteResponse(req, 100, nil, []byte{})
 			proxyFilter := filter.NewUpstream(filter.NewUpstreamTransport(sHost, sPort, timeout, nil))
@@ -183,26 +182,25 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 			request.HttpRequest.Header.Set("Cache-Control", "no-cache, no-store")
 			request.HttpRequest.Header.Set("Pragma", "no-cache")
 
-
 			res = proxyFilter.FilterRequest(request)
 			if res.StatusCode >= 200 && res.StatusCode < 300 {
 				cached_response := structs.NewCachedResponse(res)
 				go c.cache(cacheKey, cacheRule, cached_response)
 				res.Body = ioutil.NopCloser(bytes.NewBuffer(cached_response.Body))
 			}
-			res.Header.Set("X-Cache", "Miss from " + config.GetHostname())
+			res.Header.Set("X-Cache", "Miss from "+config.GetHostname())
 		}
-	}else{
+	} else {
 		proxyFilter := filter.NewUpstream(filter.NewUpstreamTransport(sHost, sPort, timeout, nil))
-		res = proxyFilter.FilterRequest(request)			
+		res = proxyFilter.FilterRequest(request)
 	}
 
-	return 
+	return
 }
 
 func (c *CacheFilter) FilterResponse(request *falcore.Request, res *http.Response) {
 	//req := request.HttpRequest
-	
+
 }
 
 func serializeResponse(res *structs.CachedResponse) (raw []byte, err error) {

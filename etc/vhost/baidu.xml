@@ -1,6 +1,5 @@
 <vhost>
-<bind>192.168.3.200:80</bind>
-<bind>127.0.0.1:81</bind>
+<bind>:81</bind>
 <host ip="101.226.178.141" port="0">www.test.com</host>
 <host ip="101.226.178.141" port="0">test.com</host>
 </vhost>

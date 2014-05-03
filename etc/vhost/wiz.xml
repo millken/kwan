@@ -1,4 +1,4 @@
-<vhost name="wiz.cn" status="1">
+<vhost name="wiz.cn" status="0">
 <bind>:80</bind>
 <host ip="112.125.239.95" port="0">www.wiz.cn</host>
 <host ip="112.125.239.95" port="0">wiz.cn</host>
@@ -7,5 +7,16 @@
 <cache base="true" time="3600" />
 <cache file_ext="png" ignore_param="false" time="60" />
 <cache file_ext="jpg|js|css|gif|html" static="true" ignore_param="true" nocache="true" time="360" />
+<ddos request="10" rtime="3" stime="10" mode="0" />
+<whitelist>
+	<ip></ip>
+	<url></url>
+	<useragent></useragent>
+</whitelist>
+<blacklist>
+	<ip>1.1.1.1*2.2.2.3</ip>
+	<url>/test/*/alalx</url>
+	<useragent>baidu</useragent>
+</blacklist>
 </vhost>
 
