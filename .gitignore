@@ -2,7 +2,7 @@
 *.o
 *.a
 *.so
-
+*.sublime-workspace
 
 # Folders
 _obj
