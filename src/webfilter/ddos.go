@@ -2,17 +2,26 @@ package webfilter
 
 import (
 	"config"
-	"redispool"
 	"github.com/millken/falcore"
 	"net/http"
+	"net"
+	"net/url"
 	"sync/atomic"
+	"cache"
+	"utils"
 	"time"
 	"sync"
 )
 
+const (
+	DDOS_JS_FUNC = 1
+	DDOS_FLASH = 2
+	DDOS_CODE = 3
+)
 type DdosFilter map[string]*DdosFilterThrottler
 
 type DdosFilterThrottler struct {
+	Cache cache.Cache
 	count  int64
 	status bool
 	check_ticker *time.Ticker
@@ -28,9 +37,9 @@ func NewDdosFilter() (df DdosFilter) {
 	return
 }
 func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
+	req := request.HttpRequest
 	vhost := request.Context["config"].(config.Vhost)
 
-	redispool.Set("a", "ssssssssssssssssssssssssss")
 	if vhost.Ddos.Rtime == 0 || vhost.Ddos.Request == 0 {
 		return nil
 	}
@@ -40,6 +49,7 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 
 	if _, ok := df[vhostname]; !ok {
 		df[vhostname] = new(DdosFilterThrottler)
+		df[vhostname].Cache = cache.NewRedisCache(config.GetRedis().Addr, config.GetRedis().Password)
 		df[vhostname].count = 0
 		df[vhostname].status = false
 		df[vhostname].check_ticker = time.NewTicker(time.Second * time.Duration(vhost.Ddos.Rtime))
@@ -52,7 +62,20 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 	df[vhostname].tickerM.RUnlock()
 
 	if vt != nil &&  df[vhostname].status {
-		return falcore.StringResponse(request.HttpRequest, 200, nil, "the site was been attacked!\n")
+		RemoteAddr := request.RemoteAddr.String()
+		ip, _, _ := net.SplitHostPort(RemoteAddr)
+		ckey := "ddos:" + vhostname + ":" + ip
+		cval, _ := df[vhostname].Cache.Get(ckey)
+		if cval == "" {
+			cval = utils.RandomString(5)
+			df[vhostname].Cache.SetEx(ckey, 5, cval)
+		}
+		isjoin := df.isJoinToWhitelist(req.URL, cval)
+		if isjoin {
+			return falcore.StringResponse(request.HttpRequest, 200, nil, "whitelist")
+		}
+		response := df.getDdosBody(req.URL, cval, vhost.Ddos.Mode)
+		return falcore.StringResponse(request.HttpRequest, 200, nil, response)
 	}
 	if ct != nil {
 		atomic.AddInt64(&df[vhostname].count, 1)
@@ -75,4 +98,26 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 		}()
 	}
 	return nil
+}
+
+func (df DdosFilter) getDdosBody(uri *url.URL, key string, mode int32) (body string) {
+	q := uri.Query()
+	q.Set("__xxoo__", key)
+	uri.RawQuery = q.Encode()
+	switch mode {
+		case DDOS_JS_FUNC :
+			body = `<html><script>window.top.location = "`+uri.RequestURI()+`";</script></html>`
+		default :
+			body = "the site was been attacked!"
+	}
+	return 
+}
+
+func (df DdosFilter) isJoinToWhitelist(uri *url.URL, key string) bool {
+	q := uri.Query()
+	qkey := q.Get("__xxoo__")
+	if qkey != "" && qkey == key {
+		return true
+	}
+	return false
 }

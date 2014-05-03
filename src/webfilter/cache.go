@@ -13,7 +13,7 @@ import (
 	"regexp"
 	"store"
 	"strings"
-	"structs"
+	"utils"
 	"time"
 )
 
@@ -89,7 +89,7 @@ func (c *CacheFilter) cacheKey(req *http.Request) string {
 	return strings.Join(s, ":")
 }
 
-func (c *CacheFilter) cache(key string, cacheRule config.Cache, cached_response *structs.CachedResponse) {
+func (c *CacheFilter) cache(key string, cacheRule config.Cache, cached_response *utils.CachedResponse) {
 	// encode
 	encoded, err := serializeResponse(cached_response)
 	if err == nil {
@@ -184,7 +184,7 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 
 			res = proxyFilter.FilterRequest(request)
 			if res.StatusCode >= 200 && res.StatusCode < 300 {
-				cached_response := structs.NewCachedResponse(res)
+				cached_response := utils.NewCachedResponse(res)
 				go c.cache(cacheKey, cacheRule, cached_response)
 				res.Body = ioutil.NopCloser(bytes.NewBuffer(cached_response.Body))
 			}
@@ -203,14 +203,14 @@ func (c *CacheFilter) FilterResponse(request *falcore.Request, res *http.Respons
 
 }
 
-func serializeResponse(res *structs.CachedResponse) (raw []byte, err error) {
+func serializeResponse(res *utils.CachedResponse) (raw []byte, err error) {
 
 	raw, err = msgpack.Marshal(res)
 
 	return
 }
 
-func deserializeResponse(raw []byte) (res *structs.CachedResponse, err error) {
+func deserializeResponse(raw []byte) (res *utils.CachedResponse, err error) {
 
 	err = msgpack.Unmarshal(raw, &res)
 

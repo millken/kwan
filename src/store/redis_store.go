@@ -28,13 +28,24 @@ func (s *RedisStore) Get(key string) (data []byte, err error) {
   return
 }
 
+func (s *RedisStore) SetEx(key string, expiretime int32, data []byte) (error) {
+	c := s.pool.Get()
+	if c.Err() != nil {
+		return c.Err()
+	}else{
+    	defer c.Close()
+		c.Do("SETEX", key, expiretime, data)
+	}
+  return nil
+}
+
 func (s *RedisStore) Set(key string, expiretime int32, data []byte) (error) {
 	c := s.pool.Get()
 	if c.Err() != nil {
 		return c.Err()
 	}else{
     	defer c.Close()
-		c.Do("SET", key, data)
+		c.Do("SETEX", key, expiretime, data)
 	}
   return nil
 }
