@@ -16,8 +16,14 @@ type Config struct {
 	Vhosts	[]Vhost
 	VhostDir []string      `xml:"vhost_dir"`
 	Hostname  string  `xml:"hostname"`
+	RedisServer     RedisServer  `xml:"redis_server"`
 }
 
+type RedisServer struct {
+	PoolSize     int `xml:"pool_size,attr"`
+	Password   string    `xml:"password,attr"`
+	Addr string `xml:",chardata"`	
+}
 
 //map[ip][port][domain][rule_id]
 //type Sites map[string]map[int]map[string]int
@@ -83,4 +89,8 @@ func GetSslListen() map[string][]Ssl {
 
 func GetHostname() string {
 	return config.Hostname
+}
+
+func GetRedis() RedisServer {
+	return config.RedisServer
 }

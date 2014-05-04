@@ -1,36 +1,55 @@
 package redispool
 
 import (
-//	"fmt"
+	"config"
 	"github.com/garyburd/redigo/redis"
+	"time"
+	"log"
 )
-var MAX_POOL_SIZE = 20
 
-var redisPool chan redis.Conn
-
-func putRedis(conn redis.Conn) {
-	if redisPool == nil {
-		redisPool = make(chan redis.Conn, MAX_POOL_SIZE)
+var pool *redis.Pool
+func newPool() *redis.Pool {
+	server := config.GetRedis().Addr
+	password := config.GetRedis().Password
+	if pool != nil {
+		return pool
 	}
-	if len(redisPool) >= MAX_POOL_SIZE {
-		conn.Close()
-		return
+	if server == "" {
+		return nil
 	}
-	redisPool <- conn
+	
+    return &redis.Pool{
+        MaxIdle: 3,
+        IdleTimeout: 240 * time.Second,
+        Dial: func () (redis.Conn, error) {
+            c, err := redis.Dial("tcp", server)
+            if err != nil {
+                return nil, err
+            }
+            if password != "" {
+	            if _, err := c.Do("AUTH", password); err != nil {
+	                c.Close()
+	                return nil, err
+	            }
+        	}
+            return c, err
+        },
+        TestOnBorrow: func(c redis.Conn, t time.Time) error {
+            _, err := c.Do("PING")
+            return err
+        },
+    }
 }
 
-func InitRedis(network, address string) redis.Conn {
-	redisPool = make(chan redis.Conn, MAX_POOL_SIZE)
-	if len(redisPool) == 0 {
-		go func() {
-			for i := 0; i < MAX_POOL_SIZE/2; i++ {
-				c, err := redis.Dial(network, address)
-				if err != nil {
-					panic(err)
-				}
-				putRedis(c)
-			}
-		}()
+
+func Set(key , value string)  {
+	pool = newPool()
+	c := pool.Get()
+	if c.Err() != nil {
+		log.Printf("redis pool: %s", c.Err())
+	}else{
+    defer c.Close()
+	c.Do("SET", key, value)
 	}
-	return <-redisPool
+
 }

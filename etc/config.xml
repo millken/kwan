@@ -3,5 +3,6 @@
 <listen ip='*' port='5988' type='manage' />
 <admin user='admin' password='c4dd59407a7377c5c138ab5f6872c042' crypt='md5' auth_type='Basic' admin_ips='127.0.0.1|*'/>
 <hostname>aaaa</hostname>
+<redis_server>192.168.3.104:6379</redis_server>
 <vhost_dir>vhost/*.xml</vhost_dir>
 </config>

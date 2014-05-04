@@ -2,6 +2,7 @@ package webfilter
 
 import (
 	"config"
+	"redispool"
 	"github.com/millken/falcore"
 	"net/http"
 	"sync/atomic"
@@ -29,6 +30,7 @@ func NewDdosFilter() (df DdosFilter) {
 func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 	vhost := request.Context["config"].(config.Vhost)
 
+	redispool.Set("a", "ssssssssssssssssssssssssss")
 	if vhost.Ddos.Rtime == 0 || vhost.Ddos.Request == 0 {
 		return nil
 	}
