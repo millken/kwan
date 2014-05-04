@@ -9,12 +9,12 @@
 <cache file_ext="jpg|js|css|gif|html" static="true" ignore_param="true" nocache="true" time="360" />
 <ddos request="10" rtime="1" stime="10" mode="1" />
 <whitelist>
-	<ip></ip>
-	<url></url>
-	<useragent></useragent>
+	<ip>127.0.0.0</ip>
+	<url>/aa/</url>
+	<useragent>google</useragent>
 </whitelist>
 <blacklist>
-	<ip>1.1.1.1*2.2.2.3</ip>
+	<ip></ip>
 	<url>/test/*/alalx</url>
 	<useragent>baidu</useragent>
 </blacklist>

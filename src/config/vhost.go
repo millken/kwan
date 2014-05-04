@@ -18,6 +18,8 @@ type Vhost struct {
 	Cache []Cache `xml:"cache"`
 	Ssl []Ssl `xml:"ssl"`
 	Ddos Ddos `xml:"ddos"`
+	WhiteList BlackWhiteList `xml:"whitelist"`
+	BlackList BlackWhiteList `xml:"blacklist"`
 }
 
 type Cache struct {
@@ -37,6 +39,7 @@ type Ssl struct {
 	Keyfile string `xml:"key_file,attr"`
 	Certfile string `xml:"cert_file,attr"`
 }
+
 type Host struct {
 	Ip     string `xml:"ip,attr"`
 	Port   int    `xml:"port,attr"`
@@ -48,6 +51,12 @@ type Ddos struct {
 	Rtime int32 `xml:"rtime,attr"`
 	Stime int32 `xml:"stime,attr"`	
 	Mode int32 `xml:"mode,attr"`
+}
+
+type BlackWhiteList struct {
+	Ip  []string `xml:"ip"`
+	Url  []string `xml:"url"`
+	UserAgent  []string `xml:"useragent"`
 }
 
 func LoadVhostDir() {
