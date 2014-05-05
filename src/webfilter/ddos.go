@@ -66,13 +66,17 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 		ip, _, _ := net.SplitHostPort(RemoteAddr)
 		ckey := "ddos:" + vhostname + ":" + ip
 		cval, _ := df[vhostname].Cache.Get(ckey)
+		if cval == "pass" {
+			return nil
+		}
 		if cval == "" {
 			cval = utils.RandomString(5)
 			df[vhostname].Cache.SetEx(ckey, 5, cval)
 		}
 		isjoin := df.isJoinToWhitelist(req.URL, cval)
 		if isjoin {
-			return falcore.StringResponse(request.HttpRequest, 200, nil, "whitelist")
+			df[vhostname].Cache.SetEx(ckey, 86400, "pass")
+			return nil
 		}
 		response := df.getDdosBody(req.URL, cval, vhost.Ddos.Mode)
 		return falcore.StringResponse(request.HttpRequest, 200, nil, response)
@@ -102,11 +106,11 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 
 func (df DdosFilter) getDdosBody(uri *url.URL, key string, mode int32) (body string) {
 	q := uri.Query()
-	q.Set("__xxoo__", key)
+	q.Set("_xko", key)
 	uri.RawQuery = q.Encode()
 	switch mode {
 		case DDOS_JS_FUNC :
-			body = `<html><script>window.top.location = "`+uri.RequestURI()+`";</script></html>`
+			body = `<html><script>window.top.location = "`+utils.ToUnicode(uri.RequestURI())+`";</script></html>`
 		default :
 			body = "the site was been attacked!"
 	}
@@ -115,7 +119,7 @@ func (df DdosFilter) getDdosBody(uri *url.URL, key string, mode int32) (body str
 
 func (df DdosFilter) isJoinToWhitelist(uri *url.URL, key string) bool {
 	q := uri.Query()
-	qkey := q.Get("__xxoo__")
+	qkey := q.Get("_xko")
 	if qkey != "" && qkey == key {
 		return true
 	}

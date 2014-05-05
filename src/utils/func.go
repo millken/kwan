@@ -2,6 +2,7 @@ package utils
 
 import (
 	"math/rand"
+	"fmt"
 )
 
 func RandomString(size int) string {
@@ -14,4 +15,12 @@ func RandomString(size int) string {
 	}
 	return string(buf)
 	
+}
+
+func ToUnicode(str string) (result string) {
+	result = ""
+	for _,c := range str {
+		result += fmt.Sprintf("\\x%X", c)
+	}
+	return 
 }
