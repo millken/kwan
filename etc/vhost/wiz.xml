@@ -7,7 +7,7 @@
 <cache base="true" time="3600" />
 <cache file_ext="png" ignore_param="false" time="60" />
 <cache file_ext="jpg|js|css|gif|html" static="true" ignore_param="true" nocache="true" time="360" />
-<ddos request="10" rtime="1" stime="10" mode="1" />
+<ddos request="10" rtime="1" stime="10" mode="11" />
 <whitelist>
 	<ip>127.0.0.0</ip>
 	<url>/aa/</url>
