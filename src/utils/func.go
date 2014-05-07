@@ -5,8 +5,17 @@ import (
 	"math/rand"
 	"math/big"
 	"strconv"
+	"strings"
 	"encoding/base64"
 )
+
+// StripPort strips the port number off of a remote address
+func StripPort(remoteAddr string) string {
+  if index := strings.LastIndex(remoteAddr, ":"); index != -1 {
+    return remoteAddr[:index]
+  }
+  return remoteAddr
+}
 
 func RandomString(size int) string {
 	if size <= 0 {

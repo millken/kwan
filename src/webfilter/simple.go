@@ -8,6 +8,9 @@ import (
 	"strconv"
 	"strings"
 	"utils"
+	"logger"
+	"time"
+	"fmt"
 )
 
 type StatusFilter int
@@ -76,6 +79,18 @@ WHITELIST:
 	return nil
 }
 
+func (s StatusFilter) FilterResponse(request *falcore.Request, res *http.Response) {
+	req := request.HttpRequest
+    clientIP := request.RemoteAddr.String()
+
+    if colon := strings.LastIndex(clientIP, ":"); colon != -1 {
+        clientIP = clientIP[:colon]
+    }	
+	log := logger.NewLogger()
+	log.AddFilter("stdout", logger.DEBUG, logger.NewConsoleLogWriter())
+	logRecord :=  clientIP +" - - ["+time.Now().Format("02/Jan/2006 03:04:05")+" +8000] \""+req.Method+" "+req.RequestURI+" "+req.Proto+"\" " + fmt.Sprintf("%d %d ", res.StatusCode,res.ContentLength) + req.Referer() + " "+req.UserAgent()
+	log.Info(logRecord)	
+}
 func checkIp(ip, ips string) bool {
 	ipint32 := utils.IpStringToI32(ip)
 	ips = strings.Trim(ips, "\r\n ")

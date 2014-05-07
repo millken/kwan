@@ -51,6 +51,7 @@ func makepipeline(scheme string) *falcore.Pipeline {
 	
 	var statusfilter webfilter.StatusFilter
 	pipeline.Upstream.PushBack(statusfilter)
+	pipeline.Downstream.PushBack(statusfilter)
 
 	ddosfilter := webfilter.NewDdosFilter()
 	pipeline.Upstream.PushBack(ddosfilter)

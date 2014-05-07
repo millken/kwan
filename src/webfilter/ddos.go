@@ -36,7 +36,7 @@ type DdosFilterThrottler struct {
 var _ falcore.RequestFilter = new(DdosFilter)
 
 func NewDdosFilter() (df DdosFilter) {
-	df = make(map[string]*DdosFilterThrottler)
+	df = make(DdosFilter)
 	return
 }
 func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
