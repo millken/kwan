@@ -2,19 +2,19 @@ package utils
 
 import (
 	//"fmt"
-	"math/rand"
+	"encoding/base64"
 	"math/big"
+	"math/rand"
 	"strconv"
 	"strings"
-	"encoding/base64"
 )
 
 // StripPort strips the port number off of a remote address
 func StripPort(remoteAddr string) string {
-  if index := strings.LastIndex(remoteAddr, ":"); index != -1 {
-    return remoteAddr[:index]
-  }
-  return remoteAddr
+	if index := strings.LastIndex(remoteAddr, ":"); index != -1 {
+		return remoteAddr[:index]
+	}
+	return remoteAddr
 }
 
 func RandomString(size int) string {
@@ -33,20 +33,20 @@ func RandomString(size int) string {
 
 func unicode(input string) []int32 {
 	var result []int32
-	for _, c:= range input {
+	for _, c := range input {
 		result = append(result, c)
 	}
 	return result
 }
 
-func Crypt(input , key string) string {
+func Crypt(input, key string) string {
 	key2 := unicode(key)
 	key_len := len(key2)
 	result := ""
 	i := 0
 	for _, c := range input {
-		k := key2[i % key_len]
-		ck := new(big.Int).Xor(big.NewInt(int64(c)),big.NewInt(int64(k)))
+		k := key2[i%key_len]
+		ck := new(big.Int).Xor(big.NewInt(int64(c)), big.NewInt(int64(k)))
 		cki, _ := strconv.Atoi(ck.String())
 		result += string(rune(cki))
 		i++
@@ -62,4 +62,5 @@ func Base64_decode(str string) string {
 	data, _ := base64.StdEncoding.DecodeString(str)
 	return string(data)
 }
+
 //http://play.golang.org/p/gmYKrUcx4D

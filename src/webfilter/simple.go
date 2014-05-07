@@ -9,11 +9,15 @@ import (
 	"strings"
 	"utils"
 	"logger"
-	"time"
-	"fmt"
 )
 
 type StatusFilter int
+
+type CommonLogger map[string]*logger.CommonLogWriter
+func NewCommonLogger() (df CommonLogger) {
+	df = make(CommonLogger)
+	return
+}
 
 func (s StatusFilter) FilterRequest(request *falcore.Request) *http.Response {
 	req := request.HttpRequest
@@ -79,17 +83,19 @@ WHITELIST:
 	return nil
 }
 
-func (s StatusFilter) FilterResponse(request *falcore.Request, res *http.Response) {
+func (c CommonLogger) FilterResponse(request *falcore.Request, res *http.Response) {
 	req := request.HttpRequest
-    clientIP := request.RemoteAddr.String()
+    req.RemoteAddr = request.RemoteAddr.String()
+    vhost := request.Context["config"].(config.Vhost)
+    vhostname := vhost.Name
+    if _, ok := c[vhostname]; !ok {
 
-    if colon := strings.LastIndex(clientIP, ":"); colon != -1 {
-        clientIP = clientIP[:colon]
-    }	
-	log := logger.NewLogger()
-	log.AddFilter("stdout", logger.DEBUG, logger.NewConsoleLogWriter())
-	logRecord :=  clientIP +" - - ["+time.Now().Format("02/Jan/2006 03:04:05")+" +8000] \""+req.Method+" "+req.RequestURI+" "+req.Proto+"\" " + fmt.Sprintf("%d %d ", res.StatusCode,res.ContentLength) + req.Referer() + " "+req.UserAgent()
-	log.Info(logRecord)	
+    c[vhostname] = logger.NewCommonLogWriter("access.log", true)
+    c[vhostname].SetRotateLines(20)
+}
+
+	c[vhostname].Log(utils.BuildCommonLogLine(req, res))
+
 }
 func checkIp(ip, ips string) bool {
 	ipint32 := utils.IpStringToI32(ip)

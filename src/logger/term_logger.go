@@ -10,7 +10,6 @@ import (
 )
 
 var stdout io.Writer = os.Stdout
-var LogBufferLength = 32
 
 //Color the level string
 type colorLevelString string
