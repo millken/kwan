@@ -162,7 +162,7 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 	sHost, sPort = GetSourceIP(host, port, c.Vhost)
 
 	//falcore.Debug("source : %s:%d\n", sHost, sPort)
-	var timeout time.Duration = 3 * time.Second
+	timeout := time.Duration(1) * time.Second
 
 	request.HttpRequest.URL.Host = host
 	if cancache {

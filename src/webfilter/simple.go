@@ -91,7 +91,7 @@ func (c CommonLogger) FilterResponse(request *falcore.Request, res *http.Respons
     if _, ok := c[vhostname]; !ok {
 
     c[vhostname] = logger.NewCommonLogWriter("access.log", true)
-    c[vhostname].SetRotateLines(20)
+    c[vhostname].SetRotateLines(2000)
 }
 
 	c[vhostname].Log(utils.BuildCommonLogLine(req, res))
