@@ -1,3 +1,0 @@
-127.0.0.1 - - [08/May/2014:16:48:01 +0800] "GET /index.html HTTP/1.1" 504 16 www.wiz.cn "" "Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20100101 Firefox/24.0"
-127.0.0.1 - - [08/May/2014:16:48:37 +0800] "GET /index.html HTTP/1.1" 504 16 www.wiz.cn "" "Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20100101 Firefox/24.0"
-127.0.0.1 - - [08/May/2014:16:49:07 +0800] "GET /index.html HTTP/1.1" 504 16 www.wiz.cn "" "Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20100101 Firefox/24.0"
