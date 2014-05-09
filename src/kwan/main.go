@@ -2,7 +2,7 @@ package main
 
 import (
 	"config"
-	"fmt"
+	"logger"
 	"os"
 	"runtime"
 	"strings"
@@ -46,7 +46,7 @@ func main() {
 	numCpus := runtime.NumCPU()
 	THREADS = numCpus * 1
 	runtime.GOMAXPROCS(numCpus)
-	fmt.Printf("Started: %d cores, %d threads， version: %s\n", numCpus, THREADS, VERSION)
+	logger.Info("Started: %d cores, %d threads， version: %s", numCpus, THREADS, VERSION)
 
 	config.Read()
 	startServer()

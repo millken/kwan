@@ -6,3 +6,7 @@ type Store interface {
   Set(key string, expiretime int32, data []byte) (error)
   //SetEx(key string, expiretime int32, data string) (error)
 }
+
+type Log interface {
+	Write(s string) (error)
+}

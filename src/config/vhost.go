@@ -20,6 +20,7 @@ type Vhost struct {
 	Ddos Ddos `xml:"ddos"`
 	WhiteList BlackWhiteList `xml:"whitelist"`
 	BlackList BlackWhiteList `xml:"blacklist"`
+	Log Log `xml:"log"`
 }
 
 type Cache struct {
@@ -59,6 +60,12 @@ type BlackWhiteList struct {
 	UserAgent  []string `xml:"useragent"`
 }
 
+type Log struct {
+	Status bool  `xml:"status,attr"`
+	Type   string `xml:"type,attr"`
+	RotateDaily bool `xml:"rotate_daily,attr"`
+	Addr  string `xml:",chardata"`
+}
 func LoadVhostDir() {
 	newsites := make(map[Sites]int)
 	newlisten	:= make(map[string]int)

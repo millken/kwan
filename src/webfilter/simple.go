@@ -5,6 +5,7 @@ import (
 	"github.com/millken/falcore"
 	"net"
 	"net/http"
+	"store"
 	"strconv"
 	"strings"
 	"utils"
@@ -13,7 +14,8 @@ import (
 
 type StatusFilter int
 
-type CommonLogger map[string]*logger.CommonLogWriter
+type CommonLogger map[string]store.Log
+
 func NewCommonLogger() (df CommonLogger) {
 	df = make(CommonLogger)
 	return
@@ -77,24 +79,42 @@ WHITELIST:
 	}
 	if request.Context["whitelist"] == true {
 		request.Context["blacklist"] = false
-	}else if request.Context["blacklist"] == true {
+	} else if request.Context["blacklist"] == true {
 		return falcore.StringResponse(request.HttpRequest, 403, nil, "you has been blocked!\n")
 	}
 	return nil
 }
 
 func (c CommonLogger) FilterResponse(request *falcore.Request, res *http.Response) {
+	go func() {
 	req := request.HttpRequest
-    req.RemoteAddr = request.RemoteAddr.String()
-    vhost := request.Context["config"].(config.Vhost)
-    vhostname := vhost.Name
-    if _, ok := c[vhostname]; !ok {
+	req.RemoteAddr = request.RemoteAddr.String()
+	vhost := request.Context["config"].(config.Vhost)
+	vhostname := vhost.Name
+	vl := vhost.Log
+	if vl.Status == true {
+		switch vl.Type {
+		case "tcp", "udp":
+			if _, ok := c[vhostname]; !ok {
 
-    c[vhostname] = logger.NewCommonLogWriter("access.log", true)
-    c[vhostname].SetRotateLines(2000)
-}
+				c[vhostname] = store.NewSocketHandler(vl.Type, vl.Addr)
+			}
+		case "file":
+			if _, ok := c[vhostname]; !ok {
 
-	c[vhostname].Log(utils.BuildCommonLogLine(req, res))
+				nclw := store.NewCommonLogWriter(vl.Addr, vl.RotateDaily)
+				nclw.SetRotateDaily(vl.RotateDaily)
+				c[vhostname] = nclw
+			}
+		}
+	}
+
+		err := c[vhostname].Write(utils.BuildCommonLogLine(req, res))
+		if err != nil {
+			logger.Warn(err)
+		}
+	}()
+
 
 }
 func checkIp(ip, ips string) bool {

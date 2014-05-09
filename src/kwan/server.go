@@ -2,18 +2,18 @@ package main
 
 import (
 	"config"
-	"fmt"
+	"logger"
 	"github.com/millken/falcore"
 	"webfilter"
 )
 
 func startServer() {
 	for addr, bindnum := range config.GetListen() {
-		fmt.Printf("start listen[%d] : %s\n", bindnum, addr)
+		logger.Info("start listen[%d] : %s", bindnum, addr)
 		go listen(addr)
 	}
 	for addr, ssls := range config.GetSslListen() {
-		fmt.Printf("start ssl listen : %s\n", addr)
+		logger.Info("start ssl listen : %s", addr)
 		certs := make([]falcore.Certificates, 0)
 		for _, ssl := range ssls {
 			certs = append(certs, falcore.Certificates{
@@ -29,7 +29,7 @@ func listen(addr string) {
 	pipeline := makepipeline("http")
 	server := falcore.NewServer(addr, pipeline)
 	if err := server.ListenAndServe(); err != nil {
-		fmt.Println("Could not start server:", err)
+		logger.Error("Could not start server: %s", err)
 	}
 }
 
@@ -38,7 +38,7 @@ func ssllisten(addr string, certs []falcore.Certificates) {
 	server := falcore.NewServer(addr, spipeline)
 
 	if err := server.ListenAndServeTLSSNI(certs); err != nil {
-		fmt.Println("Could not start server:", err)
+		logger.Error("Could not start server: %s", err)
 	}
 }
 

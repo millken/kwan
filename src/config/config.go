@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/xml"
 	"flag"
-	"fmt"
+	"logger"
 	"os"
 	"path"
 	"path/filepath"
@@ -58,20 +58,17 @@ func Read() {
 	file, err := os.Open(configFile)
 	defer file.Close()
 	if err != nil {
-		fmt.Printf("open error: %s", err.Error())
+		logger.Crash(err.Error())
 		return
 	}
 	xmlObj := xml.NewDecoder(file)
 	err = xmlObj.Decode(&config)
 
 	if err != nil {
-		fmt.Printf("error: %v", err)
+		logger.Crash(err)
 	}
-	fmt.Println("Timeout", config.Timeout)
-	fmt.Printf("VhostDir:%v\n", config.VhostDir)
 	current_file, _ := filepath.Abs(configFile)
 	configPath = path.Dir(current_file) + "/"
-	fmt.Printf("configPath:%s\n", configPath)
 
 	LoadVhostDir()
 	//fmt.Printf("config:%v\n", config)
