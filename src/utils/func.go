@@ -31,6 +31,12 @@ func RandomString(size int) string {
 
 }
 
+func RandomInt(min int, max int) int {
+    var bytes int
+    bytes = min + rand.Intn(max)
+    return int(bytes)
+}
+
 func unicode(input string) []int32 {
 	var result []int32
 	for _, c := range input {

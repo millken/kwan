@@ -8,6 +8,7 @@ import (
 	"strings"
 	"strconv"
 	"fmt"
+	"logger"
 )
 
 type Vhost struct {
@@ -16,6 +17,7 @@ type Vhost struct {
 	Bind []string `xml:"bind"`
 	Host []Host   `xml:"host"`
 	Cache []Cache `xml:"cache"`
+	Limit Limit `xml:"limit"`
 	Ssl []Ssl `xml:"ssl"`
 	Ddos Ddos `xml:"ddos"`
 	WhiteList BlackWhiteList `xml:"whitelist"`
@@ -39,6 +41,11 @@ type Ssl struct {
 	Sort int `xml:"sort,attr"`
 	Keyfile string `xml:"key_file,attr"`
 	Certfile string `xml:"cert_file,attr"`
+}
+
+type Limit struct {
+	Timeout int `xml:"timeout,attr"`
+	Speed int `xml:"speed,attr"`
 }
 
 type Host struct {
@@ -66,7 +73,7 @@ type Log struct {
 	RotateDaily bool `xml:"rotate_daily,attr"`
 	Addr  string `xml:",chardata"`
 }
-func LoadVhostDir() {
+func LoadVhostDir()  {
 	newsites := make(map[Sites]int)
 	newlisten	:= make(map[string]int)
 	newssl	:= make(map[string][]Ssl)
@@ -75,21 +82,22 @@ func LoadVhostDir() {
 	for _, dir := range config.VhostDir {
 		files, err := filepath.Glob(configPath + dir)
 		if  err != nil {
-			fmt.Printf("read dir %s , %s", configPath + dir, err.Error())
+			logger.Warn("read dir %s , %s", configPath + dir, err.Error())
 			continue
 		}
 		for _, filename := range files {
 			file, err := os.Open(filename)
 			defer file.Close()
 			if err != nil {
-				fmt.Printf("open error: %s", err.Error())
-				return
+				logger.Warn("open error: %s", err.Error())
+				continue
 			}
 			vhost := Vhost{}
 			xmlObj := xml.NewDecoder(file)
 			err = xmlObj.Decode(&vhost)
 			if err != nil {
-				fmt.Printf("vhost xml parse error: %s\n", err.Error())
+				logger.Warn("vhost xml parse error: %s\n", err.Error())
+				continue
 			}
 			newvhosts[index] = vhost
 				for _, bind := range vhost.Bind {

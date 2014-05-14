@@ -52,20 +52,21 @@ func init() {
 	}
 }
 
-func Read() {
+func Read()  {
 
 	//config = Config{} //清空config
 	file, err := os.Open(configFile)
 	defer file.Close()
 	if err != nil {
-		logger.Crash(err.Error())
+		logger.Error(err.Error())
 		return
 	}
 	xmlObj := xml.NewDecoder(file)
 	err = xmlObj.Decode(&config)
 
 	if err != nil {
-		logger.Crash(err)
+		logger.Error(err.Error())
+		return
 	}
 	current_file, _ := filepath.Abs(configFile)
 	configPath = path.Dir(current_file) + "/"

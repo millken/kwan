@@ -73,13 +73,17 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 			return nil
 		}
 		if cval == "" {
-			cval = utils.RandomString(5)
+			cval = utils.RandomString(utils.RandomInt(5,12))
 			df[vhostname].Cache.SetEx(ckey, 5, cval)
 		}
 		isjoin := df.isJoinToWhitelist(req.URL, cval)
+		ikey := "ccbl:" + vhostname + ":" + ip
 		if isjoin {
+			df[vhostname].Cache.Do("Del", ikey)
 			df[vhostname].Cache.SetEx(ckey, 86400, "pass")
 			return nil
+		}else{		
+			df[vhostname].Cache.Do("INCR", ikey)
 		}
 		response := df.getDdosBody(req.URL, cval, vhost.Ddos.Mode)
 		return falcore.StringResponse(request.HttpRequest, 200, nil, response)
@@ -109,7 +113,7 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 
 func (df DdosFilter) getDdosBody(uri *url.URL, key string, mode int32) (body string) {
 	q := uri.Query()
-	q.Set("_xko", key)
+	q.Set("_l1O0", key)
 	uri.RawQuery = q.Encode()
 	switch mode {
 	case DDOS_JS_REDIRECT:
@@ -132,7 +136,7 @@ func (df DdosFilter) getDdosBody(uri *url.URL, key string, mode int32) (body str
 
 func (df DdosFilter) isJoinToWhitelist(uri *url.URL, key string) bool {
 	q := uri.Query()
-	qkey := q.Get("_xko")
+	qkey := q.Get("_l1O0")
 	if qkey != "" && qkey == key {
 		return true
 	}

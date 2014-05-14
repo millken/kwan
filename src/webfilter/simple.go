@@ -107,12 +107,13 @@ func (c CommonLogger) FilterResponse(request *falcore.Request, res *http.Respons
 				c[vhostname] = nclw
 			}
 		}
-	}
+
 
 		err := c[vhostname].Write(utils.BuildCommonLogLine(req, res))
 		if err != nil {
 			logger.Warn(err)
 		}
+	}
 	}()
 
 

@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 	"utils"
+	"logger"
 )
 
 type CacheFilter struct {
@@ -162,7 +163,11 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 	sHost, sPort = GetSourceIP(host, port, c.Vhost)
 
 	//falcore.Debug("source : %s:%d\n", sHost, sPort)
-	timeout := time.Duration(1) * time.Second
+	timeout := time.Duration(30) * time.Second	
+	if c.Vhost.Limit.Timeout > 0 {
+		timeout = time.Duration(c.Vhost.Limit.Timeout) * time.Second
+	}
+	
 
 	request.HttpRequest.URL.Host = host
 	if cancache {
@@ -184,7 +189,11 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 
 			res = proxyFilter.FilterRequest(request)
 			if res.StatusCode >= 200 && res.StatusCode < 300 {
-				cached_response := utils.NewCachedResponse(res)
+				cached_response, err := utils.NewCachedResponse(res)
+				if err != nil {
+					logger.Warn("write cache error : %s", err.Error())
+					return
+				}
 				go c.cache(cacheKey, cacheRule, cached_response)
 				res.Body = ioutil.NopCloser(bytes.NewBuffer(cached_response.Body))
 			}

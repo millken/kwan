@@ -9,7 +9,7 @@ go get github.com/millken/cache2go
 go get github.com/vmihailenco/msgpack
 go get github.com/garyburd/redigo/redis
 go get github.com/aybabtme/color/brush
-go build -ldflags "-s -X main.gitVersion $REVISION" kwan
+go build  kwan
 mv kwan ./bin/
 #go install kwan
 

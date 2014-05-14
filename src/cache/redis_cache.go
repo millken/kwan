@@ -23,6 +23,18 @@ func (rc *RedisCache) Get(key string) (data string, err error) {
   return
 }
 
+func (rc *RedisCache) Do(cmd string, args ...interface{}) (reply interface{}, err error) {
+	c := rc.pool.Get()
+	if c.Err() != nil {
+		reply = ""
+		err = c.Err()
+	}else{
+    	defer c.Close()
+		reply, err = c.Do(cmd, args...)
+	}
+  return
+}
+
 func (rc *RedisCache) SetEx(key string, expiretime int32, data string) (error) {
 	c := rc.pool.Get()
 	if c.Err() != nil {

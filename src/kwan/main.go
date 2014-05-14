@@ -39,9 +39,6 @@ func init() {
 	})
 }
 
-/*
- *  线程不能开太多，官方建议在20以内，这里设为cpu*2
- */
 func main() {
 	numCpus := runtime.NumCPU()
 	THREADS = numCpus * 1
