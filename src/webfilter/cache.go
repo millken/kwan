@@ -8,6 +8,7 @@ import (
 	"github.com/millken/falcore/filter"
 	"github.com/vmihailenco/msgpack"
 	"io/ioutil"
+	"logger"
 	"net/http"
 	"path/filepath"
 	"regexp"
@@ -15,7 +16,6 @@ import (
 	"strings"
 	"time"
 	"utils"
-	"logger"
 )
 
 type CacheFilter struct {
@@ -27,7 +27,7 @@ const DefaultTimeFormat = "2006-01-02 15:04:05.999999999"
 
 func NewCacheFilter() (cf *CacheFilter) {
 	cf = &CacheFilter{
-		Store: store.NewCache2goStore(),
+		Store: store.NewRedisStore(),
 	}
 	return
 }
@@ -104,8 +104,12 @@ func (c *CacheFilter) cache(key string, cacheRule config.Cache, cached_response 
 func (c *CacheFilter) serveFromCache(data []byte, request *falcore.Request) (res *http.Response) {
 	req := request.HttpRequest
 	request.CurrentStage.Status = 1 // Skipped (default)
-	cached_response, _ := deserializeResponse(data)
-	res = falcore.ByteResponse(req, cached_response.StatusCode, cached_response.Headers, cached_response.Body)
+	cached_response, err := deserializeResponse(data)
+	if err != nil {
+		logger.Warn("get CachedResponse : %s", err)
+	} else {
+		res = falcore.ByteResponse(req, cached_response.StatusCode, cached_response.Headers, cached_response.Body)
+	}
 	if if_none_match := req.Header.Get("If-None-Match"); if_none_match != "" {
 		if cached_response.Headers.Get("Etag") == if_none_match {
 			res.StatusCode = 304
@@ -158,25 +162,24 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 		return
 	}
 	c.SetVhost(request.Context["config"].(config.Vhost))
+	request.HttpRequest.URL.Host = host
 	cancache, cacheRule := c.checkCacheRule(req)
 	cacheKey := c.cacheKey(req)
 	sHost, sPort = GetSourceIP(host, port, c.Vhost)
 
 	//falcore.Debug("source : %s:%d\n", sHost, sPort)
-	timeout := time.Duration(30) * time.Second	
+	timeout := time.Duration(30) * time.Second
 	if c.Vhost.Limit.Timeout > 0 {
 		timeout = time.Duration(c.Vhost.Limit.Timeout) * time.Second
 	}
-	
 
-	request.HttpRequest.URL.Host = host
 	if cancache {
 		tmppos := strings.Index(cacheKey, "?")
 		if cacheRule.IgnoreParam && tmppos > 0 {
 			cacheKey = cacheKey[:tmppos]
 		}
 		data, err := c.Store.Get(cacheKey)
-		if err == nil { // cache hit. Serve it.
+		if err == nil && len(data) > 10 { // cache hit. Serve it.
 			res = c.serveFromCache(data, request)
 			res.Header.Set("X-Cache", "Hit from "+config.GetHostname())
 		} else { // Cache miss. Proxy and cache.

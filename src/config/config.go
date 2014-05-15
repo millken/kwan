@@ -16,6 +16,7 @@ type Config struct {
 	Vhosts	[]Vhost
 	VhostDir []string      `xml:"vhost_dir"`
 	Hostname  string  `xml:"hostname"`
+	Servename  string  `xml:"servername"`
 	RedisServer     RedisServer  `xml:"redis_server"`
 }
 
@@ -89,6 +90,9 @@ func GetHostname() string {
 	return config.Hostname
 }
 
+func GetServername() string {
+	return config.Servename
+}
 func GetRedis() RedisServer {
 	return config.RedisServer
 }

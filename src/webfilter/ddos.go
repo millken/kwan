@@ -73,7 +73,7 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 			return nil
 		}
 		if cval == "" {
-			cval = utils.RandomString(utils.RandomInt(5,12))
+			cval = utils.RandomString(utils.RandomInt(5, 12))
 			df[vhostname].Cache.SetEx(ckey, 5, cval)
 		}
 		isjoin := df.isJoinToWhitelist(req.URL, cval)
@@ -82,7 +82,7 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 			df[vhostname].Cache.Do("Del", ikey)
 			df[vhostname].Cache.SetEx(ckey, 86400, "pass")
 			return nil
-		}else{		
+		} else {
 			df[vhostname].Cache.Do("INCR", ikey)
 		}
 		response := df.getDdosBody(req.URL, cval, vhost.Ddos.Mode)

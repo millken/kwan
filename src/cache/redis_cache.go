@@ -18,7 +18,11 @@ func (rc *RedisCache) Get(key string) (data string, err error) {
 		err = c.Err()
 	}else{
     	defer c.Close()
-		data, err = redis.String(c.Do("GET", key))
+		b, err := redis.Bytes(c.Do("GET", key))
+		if err != nil {
+			data = ""
+		}
+		data = string(b)
 	}
   return
 }

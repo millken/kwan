@@ -15,7 +15,7 @@ type CachedResponse struct {
 func NewCachedResponse(res *http.Response) (*CachedResponse, error) {
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return &CachedResponse{}, err
 	}
 
 	response := &CachedResponse{

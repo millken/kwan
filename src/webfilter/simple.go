@@ -3,13 +3,13 @@ package webfilter
 import (
 	"config"
 	"github.com/millken/falcore"
+	"logger"
 	"net"
 	"net/http"
 	"store"
 	"strconv"
 	"strings"
 	"utils"
-	"logger"
 )
 
 type StatusFilter int
@@ -29,6 +29,9 @@ func (s StatusFilter) FilterRequest(request *falcore.Request) *http.Response {
 	}
 	RemoteAddr := request.RemoteAddr.String()
 	ip, _, _ := net.SplitHostPort(RemoteAddr)
+
+	//request filter
+	logger.Debug(req.Host)
 	request.Context["blacklist"] = false
 	//blacklist
 BLACKLIST:
@@ -86,36 +89,35 @@ WHITELIST:
 }
 
 func (c CommonLogger) FilterResponse(request *falcore.Request, res *http.Response) {
+	res.Header.Set("Server", config.GetServername())
 	go func() {
-	req := request.HttpRequest
-	req.RemoteAddr = request.RemoteAddr.String()
-	vhost := request.Context["config"].(config.Vhost)
-	vhostname := vhost.Name
-	vl := vhost.Log
-	if vl.Status == true {
-		switch vl.Type {
-		case "tcp", "udp":
-			if _, ok := c[vhostname]; !ok {
+		req := request.HttpRequest
+		req.RemoteAddr = request.RemoteAddr.String()
+		vhost := request.Context["config"].(config.Vhost)
+		vhostname := vhost.Name
+		vl := vhost.Log
+		if vl.Status == true {
+			switch vl.Type {
+			case "tcp", "udp":
+				if _, ok := c[vhostname]; !ok {
 
-				c[vhostname] = store.NewSocketHandler(vl.Type, vl.Addr)
+					c[vhostname] = store.NewSocketHandler(vl.Type, vl.Addr)
+				}
+			case "file":
+				if _, ok := c[vhostname]; !ok {
+
+					nclw := store.NewCommonLogWriter(vl.Addr, vl.RotateDaily)
+					nclw.SetRotateDaily(vl.RotateDaily)
+					c[vhostname] = nclw
+				}
 			}
-		case "file":
-			if _, ok := c[vhostname]; !ok {
 
-				nclw := store.NewCommonLogWriter(vl.Addr, vl.RotateDaily)
-				nclw.SetRotateDaily(vl.RotateDaily)
-				c[vhostname] = nclw
+			err := c[vhostname].Write(utils.BuildCommonLogLine(req, res))
+			if err != nil {
+				logger.Warn(err)
 			}
 		}
-
-
-		err := c[vhostname].Write(utils.BuildCommonLogLine(req, res))
-		if err != nil {
-			logger.Warn(err)
-		}
-	}
 	}()
-
 
 }
 func checkIp(ip, ips string) bool {

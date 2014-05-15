@@ -23,6 +23,11 @@ type Vhost struct {
 	WhiteList BlackWhiteList `xml:"whitelist"`
 	BlackList BlackWhiteList `xml:"blacklist"`
 	Log Log `xml:"log"`
+	Request Request `xml:"request"`
+}
+
+type Request struct {
+	Http2https []string `xml:"http2https"`
 }
 
 type Cache struct {

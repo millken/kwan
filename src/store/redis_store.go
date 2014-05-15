@@ -4,6 +4,7 @@ import (
 	"github.com/garyburd/redigo/redis"
 	"config"
 	"time"
+	"errors"
 )
 
 type RedisStore struct {
@@ -22,6 +23,7 @@ func (s *RedisStore) Get(key string) (data []byte, err error) {
 		if err != nil {
 			data = nil
 		}else{
+			if len(s) == 0 {err = errors.New("data len is empty")}
 			data = []byte(s)
 		}
 	}
