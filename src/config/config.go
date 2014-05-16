@@ -49,7 +49,7 @@ func init() {
 	flag.StringVar(&configFile, "c", "config.xml", "config file path")
 	flag.Parse()
 	if configFile == "" {
-		configFile = "../etc/config.xml"
+		configFile = "/etc/kwan/config.xml"
 	}
 }
 

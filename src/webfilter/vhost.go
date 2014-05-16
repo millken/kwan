@@ -20,7 +20,7 @@ func (vr *VhostRouter) SelectPipeline(req *falcore.Request) (pipe falcore.Reques
 
 	vhost, found := config.MatchingVhost(dHost, dPort, host)
 	if found {
-		req.Context["config"] = vhost
+		req.Context["config"] = &vhost
 	} else {
 		req.Context["config"] = &config.Vhost{}
 	}
@@ -29,7 +29,7 @@ func (vr *VhostRouter) SelectPipeline(req *falcore.Request) (pipe falcore.Reques
 
 }
 
-func GetSourceIP(domain string, port int, vhost config.Vhost) (sHost string, sPort int) {
+func GetSourceIP(domain string, port int, vhost *config.Vhost) (sHost string, sPort int) {
 	sHost = ""
 	sPort = 0
 	domains := []string{

@@ -41,7 +41,7 @@ func NewDdosFilter() (df DdosFilter) {
 }
 func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 	req := request.HttpRequest
-	vhost := request.Context["config"].(config.Vhost)
+	vhost := request.Context["config"].(*config.Vhost)
 
 	if vhost.Ddos.Rtime == 0 || vhost.Ddos.Request == 0 {
 		return nil
@@ -73,7 +73,7 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 			return nil
 		}
 		if cval == "" {
-			cval = utils.RandomString(utils.RandomInt(5, 12))
+			cval = utils.RandomString(utils.RandomInt(3, 7))
 			df[vhostname].Cache.SetEx(ckey, 5, cval)
 		}
 		isjoin := df.isJoinToWhitelist(req.URL, cval)
@@ -85,7 +85,7 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 		} else {
 			df[vhostname].Cache.Do("INCR", ikey)
 		}
-		response := df.getDdosBody(req.URL, cval, vhost.Ddos.Mode)
+		response := df.getDdosBody(req.URL.String(), cval, vhost.Ddos.Mode)
 		return falcore.StringResponse(request.HttpRequest, 200, nil, response)
 	}
 	if ct != nil && request.Context["whitelist"] == false {
@@ -111,7 +111,8 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 	return nil
 }
 
-func (df DdosFilter) getDdosBody(uri *url.URL, key string, mode int32) (body string) {
+func (df DdosFilter) getDdosBody(link string, key string, mode int32) (body string) {
+	uri, _ := url.Parse(link)
 	q := uri.Query()
 	q.Set("_l1O0", key)
 	uri.RawQuery = q.Encode()

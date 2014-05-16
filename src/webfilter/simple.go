@@ -3,6 +3,7 @@ package webfilter
 import (
 	"config"
 	"github.com/millken/falcore"
+	"github.com/millken/falcore/responder"
 	"logger"
 	"net"
 	"net/http"
@@ -23,7 +24,7 @@ func NewCommonLogger() (df CommonLogger) {
 
 func (s StatusFilter) FilterRequest(request *falcore.Request) *http.Response {
 	req := request.HttpRequest
-	vhost := request.Context["config"].(config.Vhost)
+	vhost := request.Context["config"].(*config.Vhost)
 	if vhost.Status == 1 {
 		return falcore.StringResponse(request.HttpRequest, 200, nil, "the site was paused!\n")
 	}
@@ -31,7 +32,14 @@ func (s StatusFilter) FilterRequest(request *falcore.Request) *http.Response {
 	ip, _, _ := net.SplitHostPort(RemoteAddr)
 
 	//request filter
-	logger.Debug(req.Host)
+	//http2https
+	for _, host := range vhost.Request.Http2https {
+		if req.URL.Scheme == "http" && req.Host == host {
+			req.URL.Scheme = "https"
+			req.URL.Host = req.Host
+			return responder.RedirectResponse(req, req.URL.String())
+		}
+	}
 	request.Context["blacklist"] = false
 	//blacklist
 BLACKLIST:
@@ -93,7 +101,7 @@ func (c CommonLogger) FilterResponse(request *falcore.Request, res *http.Respons
 	go func() {
 		req := request.HttpRequest
 		req.RemoteAddr = request.RemoteAddr.String()
-		vhost := request.Context["config"].(config.Vhost)
+		vhost := request.Context["config"].(*config.Vhost)
 		vhostname := vhost.Name
 		vl := vhost.Log
 		if vl.Status == true {

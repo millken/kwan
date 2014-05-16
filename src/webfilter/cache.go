@@ -20,7 +20,7 @@ import (
 
 type CacheFilter struct {
 	Store store.Store
-	Vhost config.Vhost
+	Vhost *config.Vhost
 }
 
 const DefaultTimeFormat = "2006-01-02 15:04:05.999999999"
@@ -32,7 +32,7 @@ func NewCacheFilter() (cf *CacheFilter) {
 	return
 }
 
-func (c *CacheFilter) SetVhost(vhost config.Vhost) {
+func (c *CacheFilter) SetVhost(vhost *config.Vhost) {
 	c.Vhost = vhost
 }
 
@@ -161,7 +161,7 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 		request.CurrentStage.Status = 0
 		return
 	}
-	c.SetVhost(request.Context["config"].(config.Vhost))
+	c.SetVhost(request.Context["config"].(*config.Vhost))
 	request.HttpRequest.URL.Host = host
 	cancache, cacheRule := c.checkCacheRule(req)
 	cacheKey := c.cacheKey(req)
