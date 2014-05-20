@@ -4,6 +4,7 @@ import (
 	"config"
 	"logger"
 	"os"
+	"os/signal"
 	"runtime"
 	"strings"
 )
@@ -47,6 +48,9 @@ func main() {
 
 	config.Read()
 	startServer()
-	waitForeverCh := make(chan int)
-	<-waitForeverCh
+	terminate := make(chan os.Signal)
+	signal.Notify(terminate, os.Interrupt)
+
+	<-terminate
+	logger.Info("signal received, stopping")
 }
