@@ -9,14 +9,8 @@ import (
 	"strings"
 )
 
-const (
-	QUEUE_LENGTH    = 65535
-	CONFIG_INTERVAL = 20
-)
-
-var VERSION string = "1.39"
+var VERSION string = "0.1"
 var gitVersion string
-var THREADS = 8
 var _ENV map[string]string
 
 func init() {
@@ -42,15 +36,15 @@ func init() {
 
 func main() {
 	numCpus := runtime.NumCPU()
-	THREADS = numCpus * 1
+	threads := numCpus * 1
 	runtime.GOMAXPROCS(numCpus)
-	logger.Info("Started: %d cores, %d threads， version: %s", numCpus, THREADS, VERSION)
+	logger.Info("Started: %d cores, %d threads， version: %s", numCpus, threads, VERSION)
 
 	config.Read()
 	startServer()
+	go StartConsole()
 	terminate := make(chan os.Signal)
 	signal.Notify(terminate, os.Interrupt)
 
 	<-terminate
-	logger.Info("signal received, stopping")
 }

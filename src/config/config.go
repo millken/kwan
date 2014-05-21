@@ -17,6 +17,7 @@ type Config struct {
 	VhostDir []string      `xml:"vhost_dir"`
 	Hostname  string  `xml:"hostname"`
 	Servename  string  `xml:"servername"`
+	Console string  `xml:"console"`
 	RedisServer     RedisServer  `xml:"redis_server"`
 }
 
@@ -44,23 +45,28 @@ var (
 	listen map[string]int
 	ssl_listen map[string][]Ssl
 	vhosts map[int]Vhost
+	profileFlag = flag.Bool("profile", false, "print profile")
 )
 func init() {
-	flag.StringVar(&configFile, "c", "config.xml", "config file path")
+	flag.StringVar(&configFile, "c", "", "config file path")
 	flag.Parse()
 	if configFile == "" {
 		configFile = "/etc/kwan/config.xml"
 	}
+	if os.Geteuid() != 0 {
+		logger.Error("please run as root")
+	}
 }
 
 func Read()  {
-
+	logger.Info("load main config: %s", configFile)
 	//config = Config{} //清空config
 	file, err := os.Open(configFile)
-	defer file.Close()
 	if err != nil {
 		logger.Error(err.Error())
 		return
+	}else{
+		defer file.Close()
 	}
 	xmlObj := xml.NewDecoder(file)
 	err = xmlObj.Decode(&config)
@@ -92,6 +98,9 @@ func GetHostname() string {
 
 func GetServername() string {
 	return config.Servename
+}
+func GetConsoleAddr() string {
+	return config.Console
 }
 func GetRedis() RedisServer {
 	return config.RedisServer

@@ -91,11 +91,14 @@ func LoadVhostDir()  {
 			continue
 		}
 		for _, filename := range files {
+			logger.Info("load vhost: %s", filename)
 			file, err := os.Open(filename)
-			defer file.Close()
 			if err != nil {
 				logger.Warn("open error: %s", err.Error())
 				continue
+			}else{
+				defer file.Close()
+
 			}
 			vhost := Vhost{}
 			xmlObj := xml.NewDecoder(file)

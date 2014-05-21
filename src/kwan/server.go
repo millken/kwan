@@ -2,8 +2,8 @@ package main
 
 import (
 	"config"
-	"logger"
 	"github.com/millken/falcore"
+	"logger"
 	"webfilter"
 )
 
@@ -17,12 +17,12 @@ func startServer() {
 		certs := make([]falcore.Certificates, 0)
 		for _, ssl := range ssls {
 			certs = append(certs, falcore.Certificates{
-					CertFile: ssl.Certfile,
-					KeyFile:  ssl.Keyfile,
-				})
+				CertFile: ssl.Certfile,
+				KeyFile:  ssl.Keyfile,
+			})
 		}
 		go ssllisten(addr, certs)
-	}	
+	}
 }
 
 func listen(addr string) {
@@ -48,7 +48,7 @@ func makepipeline(scheme string) *falcore.Pipeline {
 	// upstream
 	//pipeline.Upstream.PushBack(helloFilter)
 	pipeline.Upstream.PushBack(&webfilter.VhostRouter{scheme})
-	
+
 	var statusfilter webfilter.StatusFilter
 	pipeline.Upstream.PushBack(statusfilter)
 	pipeline.Downstream.PushBack(webfilter.NewCommonLogger())
@@ -58,6 +58,6 @@ func makepipeline(scheme string) *falcore.Pipeline {
 
 	cachefilter := webfilter.NewCacheFilter()
 	pipeline.Upstream.PushBack(cachefilter)
-	//server.CompletionCallback = reqCB	
+	//server.CompletionCallback = reqCB
 	return pipeline
 }
