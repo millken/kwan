@@ -24,7 +24,6 @@ const (
 type DdosFilter map[string]*DdosFilterThrottler
 
 type DdosFilterThrottler struct {
-	Cache        cache.Cache
 	count        int64
 	status       bool
 	check_ticker *time.Ticker
@@ -52,7 +51,6 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 
 	if _, ok := df[vhostname]; !ok {
 		df[vhostname] = new(DdosFilterThrottler)
-		df[vhostname].Cache = cache.NewRedisCache(config.GetRedis().Addr, config.GetRedis().Password)
 		df[vhostname].count = 0
 		df[vhostname].status = false
 		df[vhostname].check_ticker = time.NewTicker(time.Second * time.Duration(vhost.Ddos.Rtime))
@@ -68,22 +66,30 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 		RemoteAddr := request.RemoteAddr.String()
 		ip, _, _ := net.SplitHostPort(RemoteAddr)
 		ckey := "ddos:" + vhostname + ":" + ip
-		cval, _ := df[vhostname].Cache.Get(ckey)
-		if cval == "pass" {
-			return nil
-		}
-		if cval == "" {
+		var cval string
+		cval1 := cache.Get(ckey)
+		if cval1 == nil {
 			cval = utils.RandomString(utils.RandomInt(3, 7))
-			df[vhostname].Cache.SetEx(ckey, 5, cval)
+			cache.Put(ckey, cval, 5)
+
+		}else{
+			cval = cval1.(string)
+			if cval == "pass" {
+				return nil
+			}
 		}
 		isjoin := df.isJoinToWhitelist(req.URL, cval)
 		ikey := "ccbl:" + vhostname + ":" + ip
 		if isjoin {
-			df[vhostname].Cache.Do("Del", ikey)
-			df[vhostname].Cache.SetEx(ckey, 86400, "pass")
+			cache.Delete(ikey)
+			cache.Put(ckey, "pass", 86400)
 			return nil
 		} else {
-			df[vhostname].Cache.Do("INCR", ikey)
+			if cache.IsExist(ikey) == false {
+				cache.Put(ikey, 1, 600)
+			}else{
+				cache.Incr(ikey)
+			}
 		}
 		response := df.getDdosBody(req.URL.String(), cval, vhost.Ddos.Mode)
 		return falcore.StringResponse(request.HttpRequest, 200, nil, response)

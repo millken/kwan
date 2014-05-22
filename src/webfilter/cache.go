@@ -27,7 +27,7 @@ const DefaultTimeFormat = "2006-01-02 15:04:05.999999999"
 
 func NewCacheFilter() (cf *CacheFilter) {
 	cf = &CacheFilter{
-		Store: store.NewRedisStore(),
+		Store: store.NewCache2goStore(),
 	}
 	return
 }

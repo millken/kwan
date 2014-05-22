@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"runtime"
+	"cache"
 )
 
 var cpuProfile *os.File
@@ -116,6 +117,24 @@ func ConsoleRawHandler(conn net.Conn) {
            }
         case "quit":
         	return
+        case "keys":
+        	res, err := cache.Do("keys", tokens[1])
+        	if err != nil {
+        		output := err.Error()
+        		conn.Write([]byte(output + "\n"))	
+        	}else{
+        		for k,v := range res.(map[string]interface{}) {
+        			switch v.(type) {
+        			case int:
+        				conn.Write([]byte(fmt.Sprintf("%s\t%d\n", k, v.(int))))
+        			case string:
+        				conn.Write([]byte(k + "\t" + v.(string) + "\n"))
+
+        			}
+        			
+        		}
+        	}
+        	
         case "get":
 
 			conn.Write([]byte("END\r\n"))
