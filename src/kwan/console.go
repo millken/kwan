@@ -10,10 +10,12 @@ import (
 	"net/textproto"
 	"os"
 	"runtime/pprof"
+	"syscall"
 	"strconv"
 	"strings"
 	"runtime"
 	"cache"
+	"time"
 )
 
 var cpuProfile *os.File
@@ -84,6 +86,31 @@ func ConsoleRawHandler(conn net.Conn) {
 			case "block":
 				p := pprof.Lookup("block")
 				p.WriteTo(conn, 2)
+			case "load":
+				usage1 := &syscall.Rusage{}
+				var lastUtime int64
+				var lastStime int64
+				counter := 0
+				for {
+				//http://man7.org/linux/man-pages/man3/vtimes.3.html
+				syscall.Getrusage(syscall.RUSAGE_SELF, usage1)
+
+				utime := usage1.Utime.Nano()
+				stime := usage1.Stime.Nano()
+				userCPUUtil := float64(utime-lastUtime) * 100 / float64(1)
+				sysCPUUtil := float64(stime-lastStime) * 100 / float64(1)
+				memUtil := usage1.Maxrss * 1024
+
+				lastUtime = utime
+				lastStime = stime
+				if counter > 0 {
+				conn.Write([]byte(fmt.Sprintf("cpu: %3.2f%% us  %3.2f%% sy, mem:%s \n", userCPUUtil, sysCPUUtil, toH(uint64(memUtil)))))			
+				break
+			}
+					counter += 1
+
+					time.Sleep(1)
+				}				
 			}
 
 		case "startcpuprof":
@@ -145,7 +172,6 @@ func ConsoleRawHandler(conn net.Conn) {
 			}
 			conn.Write([]byte("set\r\n"))        	
 		}
-
 
 	}
 }

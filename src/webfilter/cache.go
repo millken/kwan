@@ -19,7 +19,6 @@ import (
 )
 
 type CacheFilter struct {
-	Store store.Store
 	Vhost *config.Vhost
 }
 
@@ -27,17 +26,13 @@ const DefaultTimeFormat = "2006-01-02 15:04:05.999999999"
 
 func NewCacheFilter() (cf *CacheFilter) {
 	cf = &CacheFilter{
-		Store: store.NewCache2goStore(),
+		//Store: store.NewYbcStore(),
 	}
 	return
 }
 
 func (c *CacheFilter) SetVhost(vhost *config.Vhost) {
 	c.Vhost = vhost
-}
-
-func (c *CacheFilter) SetStore(s store.Store) {
-	c.Store = s
 }
 
 func (c *CacheFilter) checkCacheRule(req *http.Request) (cache bool, result config.Cache) {
@@ -95,7 +90,7 @@ func (c *CacheFilter) cache(key string, cacheRule config.Cache, cached_response 
 	encoded, err := serializeResponse(cached_response)
 	if err == nil {
 		//fmt.Printf("proxy set cache ok %s %d\n", key, cacheRule.Time)
-		c.Store.Set(key, cacheRule.Time, encoded)
+		store.Set(key, cacheRule.Time, encoded)
 	} else {
 		fmt.Printf("proxy set cache failue :%s\n", err)
 	}
@@ -162,6 +157,7 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 		return
 	}
 	c.SetVhost(request.Context["config"].(*config.Vhost))
+
 	request.HttpRequest.URL.Host = host
 	cancache, cacheRule := c.checkCacheRule(req)
 	cacheKey := c.cacheKey(req)
@@ -178,7 +174,7 @@ func (c *CacheFilter) FilterRequest(request *falcore.Request) (res *http.Respons
 		if cacheRule.IgnoreParam && tmppos > 0 {
 			cacheKey = cacheKey[:tmppos]
 		}
-		data, err := c.Store.Get(cacheKey)
+		data, err := store.Get(cacheKey)
 		if err == nil && len(data) > 10 { // cache hit. Serve it.
 			res = c.serveFromCache(data, request)
 			res.Header.Set("X-Cache", "Hit from "+config.GetHostname())

@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var VERSION string = "0.1"
+var VERSION string = "0.11"
 var gitVersion string
 var _ENV map[string]string
 
