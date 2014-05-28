@@ -2,10 +2,10 @@ package main
 
 import (
 	"config"
-	"github.com/millken/falcore"
+	"core"
 	"logger"
 	"syscall"
-	"webfilter"
+	//"webfilter"
 )
 
 func setRlimit() {
@@ -24,41 +24,41 @@ func setRlimit() {
 	}
 }
 
-func startServer() {
+func listenServer() {
 	for addr, bindnum := range config.GetListen() {
 		logger.Info("start listen[%d] : %s", bindnum, addr)
 		go listen(addr)
 	}
 	for addr, ssls := range config.GetSslListen() {
-		logger.Info("start ssl listen : %s", addr)
-		certs := make([]falcore.Certificates, 0)
+		logger.Info("start listen ssl : %s", addr)
+		certs := make([]core.Certificates, 0)
 		for _, ssl := range ssls {
-			certs = append(certs, falcore.Certificates{
+			certs = append(certs, core.Certificates{
 				CertFile: ssl.Certfile,
 				KeyFile:  ssl.Keyfile,
 			})
 		}
-		go ssllisten(addr, certs)
+		go listenSSL(addr, certs)
 	}
 }
 
 func listen(addr string) {
-	pipeline := makepipeline("http")
-	server := falcore.NewServer(addr, pipeline)
+	//pipeline := makepipeline("http")
+	server := core.NewServer(addr)
 	if err := server.ListenAndServe(); err != nil {
 		logger.Exitf("Could not start server[%s]: %s", addr, err)
 	}
 }
 
-func ssllisten(addr string, certs []falcore.Certificates) {
-	spipeline := makepipeline("https")
-	server := falcore.NewServer(addr, spipeline)
+func listenSSL(addr string, certs []core.Certificates) {
+	//spipeline := makepipeline("https")
+	server := core.NewServer(addr)
 
 	if err := server.ListenAndServeTLSSNI(certs); err != nil {
 		logger.Error("Could not start server: %s", err)
 	}
 }
-
+/*
 func makepipeline(scheme string) *falcore.Pipeline {
 	pipeline := falcore.NewPipeline()
 
@@ -78,3 +78,4 @@ func makepipeline(scheme string) *falcore.Pipeline {
 	//server.CompletionCallback = reqCB
 	return pipeline
 }
+*/

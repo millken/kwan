@@ -42,7 +42,7 @@ func main() {
 
 	setRlimit()
 	config.Read()
-	startServer()
+	listenServer()
 	go StartConsole()
 	sigChan := make(chan os.Signal, 3)
 
