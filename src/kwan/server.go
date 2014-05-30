@@ -4,8 +4,25 @@ import (
 	"config"
 	"github.com/millken/falcore"
 	"logger"
+	"syscall"
 	"webfilter"
 )
+
+func setRlimit() {
+	var rLimit syscall.Rlimit
+	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+	if err != nil {
+		logger.Warn("Unable to obtain rLimit", err)
+	}
+	if rLimit.Cur < rLimit.Max {
+		rLimit.Max = 999999
+		rLimit.Cur = 999999
+		err = syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+		if err != nil {
+			logger.Warn("Unable to increase number of open files limit", err)
+		}
+	}
+}
 
 func startServer() {
 	for addr, bindnum := range config.GetListen() {
@@ -29,7 +46,7 @@ func listen(addr string) {
 	pipeline := makepipeline("http")
 	server := falcore.NewServer(addr, pipeline)
 	if err := server.ListenAndServe(); err != nil {
-		logger.Error("Could not start server: %s", err)
+		logger.Exitf("Could not start server[%s]: %s", addr, err)
 	}
 }
 

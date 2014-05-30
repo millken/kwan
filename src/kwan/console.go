@@ -3,18 +3,18 @@ package main
 
 import (
 	"bufio"
+	"cache"
 	"config"
 	"fmt"
 	"logger"
 	"net"
 	"net/textproto"
 	"os"
+	"runtime"
 	"runtime/pprof"
-	"syscall"
 	"strconv"
 	"strings"
-	"runtime"
-	"cache"
+	"syscall"
 	"time"
 )
 
@@ -73,7 +73,7 @@ func ConsoleRawHandler(conn net.Conn) {
 		command := tokens[0]
 
 		switch command {
-			//http://1234n.com/?post/wgskfs 
+		//http://1234n.com/?post/wgskfs
 		case "lookup":
 			subcommand := tokens[1]
 			switch subcommand {
@@ -92,25 +92,25 @@ func ConsoleRawHandler(conn net.Conn) {
 				var lastStime int64
 				counter := 0
 				for {
-				//http://man7.org/linux/man-pages/man3/vtimes.3.html
-				syscall.Getrusage(syscall.RUSAGE_SELF, usage1)
+					//http://man7.org/linux/man-pages/man3/vtimes.3.html
+					syscall.Getrusage(syscall.RUSAGE_SELF, usage1)
 
-				utime := usage1.Utime.Nano()
-				stime := usage1.Stime.Nano()
-				userCPUUtil := float64(utime-lastUtime) * 100 / float64(1)
-				sysCPUUtil := float64(stime-lastStime) * 100 / float64(1)
-				memUtil := usage1.Maxrss * 1024
+					utime := usage1.Utime.Nano()
+					stime := usage1.Stime.Nano()
+					userCPUUtil := float64(utime-lastUtime) * 100 / float64(1)
+					sysCPUUtil := float64(stime-lastStime) * 100 / float64(1)
+					memUtil := usage1.Maxrss * 1024
 
-				lastUtime = utime
-				lastStime = stime
-				if counter > 0 {
-				conn.Write([]byte(fmt.Sprintf("cpu: %3.2f%% us  %3.2f%% sy, mem:%s \n", userCPUUtil, sysCPUUtil, toH(uint64(memUtil)))))			
-				break
-			}
+					lastUtime = utime
+					lastStime = stime
+					if counter > 0 {
+						conn.Write([]byte(fmt.Sprintf("cpu: %3.2f%% us  %3.2f%% sy, mem:%s \n", userCPUUtil, sysCPUUtil, toH(uint64(memUtil)))))
+						break
+					}
 					counter += 1
 
 					time.Sleep(1)
-				}				
+				}
 			}
 
 		case "startcpuprof":
@@ -134,35 +134,35 @@ func ConsoleRawHandler(conn net.Conn) {
 			}
 		case "getmemprof":
 			filename := "mem-" + strconv.Itoa(os.Getpid()) + ".pprof"
-           if f, err := os.Create(filename); err != nil {
-               conn.Write([]byte(fmt.Sprintf("record memory profile failed: %v", err)))
-           } else {
-               runtime.GC()
-               pprof.WriteHeapProfile(f)
-               f.Close()
-               conn.Write([]byte("record memory profile\n"))
-           }
-        case "quit":
-        	return
-        case "keys":
-        	res, err := cache.Do("keys", tokens[1])
-        	if err != nil {
-        		output := err.Error()
-        		conn.Write([]byte(output + "\n"))	
-        	}else{
-        		for k,v := range res.(map[string]interface{}) {
-        			switch v.(type) {
-        			case int:
-        				conn.Write([]byte(fmt.Sprintf("%s\t%d\n", k, v.(int))))
-        			case string:
-        				conn.Write([]byte(k + "\t" + v.(string) + "\n"))
+			if f, err := os.Create(filename); err != nil {
+				conn.Write([]byte(fmt.Sprintf("record memory profile failed: %v", err)))
+			} else {
+				runtime.GC()
+				pprof.WriteHeapProfile(f)
+				f.Close()
+				conn.Write([]byte("record memory profile\n"))
+			}
+		case "quit":
+			return
+		case "keys":
+			res, err := cache.Do("keys", tokens[1])
+			if err != nil {
+				output := err.Error()
+				conn.Write([]byte(output + "\n"))
+			} else {
+				for k, v := range res.(map[string]interface{}) {
+					switch v.(type) {
+					case int:
+						conn.Write([]byte(fmt.Sprintf("%s\t%d\n", k, v.(int))))
+					case string:
+						conn.Write([]byte(k + "\t" + v.(string) + "\n"))
 
-        			}
-        			
-        		}
-        	}
-        	
-        case "get":
+					}
+
+				}
+			}
+
+		case "get":
 
 			conn.Write([]byte("END\r\n"))
 		case "set":
@@ -170,8 +170,22 @@ func ConsoleRawHandler(conn net.Conn) {
 				conn.Write([]byte("Error"))
 				return
 			}
-			conn.Write([]byte("set\r\n"))        	
+			conn.Write([]byte("set\r\n"))
 		}
 
+	}
+}
+
+// human readable format
+func toH(bytes uint64) string {
+	switch {
+	case bytes < 1024:
+		return fmt.Sprintf("%dB", bytes)
+	case bytes < 1024*1024:
+		return fmt.Sprintf("%.2fK", float64(bytes)/1024)
+	case bytes < 1024*1024*1024:
+		return fmt.Sprintf("%.2fM", float64(bytes)/1024/1024)
+	default:
+		return fmt.Sprintf("%.2fG", float64(bytes)/1024/1024/1024)
 	}
 }

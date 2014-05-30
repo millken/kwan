@@ -40,11 +40,13 @@ func main() {
 	runtime.GOMAXPROCS(numCpus)
 	logger.Info("Started: %d cores, %d threads， version: %s", numCpus, threads, VERSION)
 
+	setRlimit()
 	config.Read()
 	startServer()
 	go StartConsole()
-	terminate := make(chan os.Signal)
-	signal.Notify(terminate, os.Interrupt)
+	sigChan := make(chan os.Signal, 3)
 
-	<-terminate
+	signal.Notify(sigChan, os.Interrupt, os.Kill)
+
+	<-sigChan
 }

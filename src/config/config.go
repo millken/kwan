@@ -63,8 +63,7 @@ func Read()  {
 	//config = Config{} //清空config
 	file, err := os.Open(configFile)
 	if err != nil {
-		logger.Error(err.Error())
-		return
+		logger.Exit(err.Error())
 	}else{
 		defer file.Close()
 	}
@@ -72,8 +71,7 @@ func Read()  {
 	err = xmlObj.Decode(&config)
 
 	if err != nil {
-		logger.Error(err.Error())
-		return
+		logger.Exit(err.Error())
 	}
 	current_file, _ := filepath.Abs(configFile)
 	configPath = path.Dir(current_file) + "/"
