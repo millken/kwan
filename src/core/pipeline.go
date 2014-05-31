@@ -17,8 +17,8 @@ func AddRequestFilter(reqfilter interface{}) {
 	pipeline.Upstream.PushBack(reqfilter)
 }
 
-func AddResponseFilter(resfilter *ResponseFilter) {
-	pipeline.Upstream.PushBack(resfilter)
+func AddResponseFilter(resfilter interface{}) {
+	pipeline.Downstream.PushBack(resfilter)
 }
 
 func NewPipeline() (l *Pipeline) {

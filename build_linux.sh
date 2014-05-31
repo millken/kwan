@@ -9,6 +9,7 @@ go get github.com/millken/cache2go
 go get github.com/vmihailenco/msgpack
 go get github.com/garyburd/redigo/redis
 go get github.com/aybabtme/color/brush
+go get github.com/golang/groupcache/lru
 go build  kwan
 mv kwan ./bin/
 #go install kwan

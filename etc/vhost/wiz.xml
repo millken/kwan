@@ -8,7 +8,7 @@
 
 <limit speed="56" max_per_ip="100" timeout="30"/>
 <cache base="true" time="3600" />
-<cache file_ext="png" ignore_param="false" time="60" />
+<cache file_ext="pdng" ignore_param="false" time="60" />
 <cache file_ext="jpg|js|css|gif|html" static="true" ignore_param="true" nocache="true" time="360" />
 <ddos request="10" rtime="1" stime="10" mode="11" />
 <log status="0" type="file" rotate_daily="false">/var/log/kwan.access.log</log>
