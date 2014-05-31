@@ -39,13 +39,9 @@ func StringResponse(req *http.Request, status int, headers http.Header, body str
 	return SimpleResponse(req, status, headers, int64(len(body)), strings.NewReader(body))
 }
 
-// Generate an http.Response using the read half of an io.Pipe as the Body.
-// Returns the write half of an io.Pipe and the response.
-//
-// Use this to stream a generated body without buffering first.  Don't forget to close the writer when finished.
-// Writes are blocking until something Reads so you must use a separate goroutine for writing.
-// Response will be Transfer-Encoding: chunked.
-func PipeResponse(req *http.Request, status int, headers http.Header) (io.WriteCloser, *http.Response) {
-	pR, pW := io.Pipe()
-	return pW, SimpleResponse(req, status, headers, -1, pR)
+// A 302 redirect response
+func RedirectResponse(req *http.Request, url string) *http.Response {
+	h := make(http.Header)
+	h.Set("Location", url)
+	return SimpleResponse(req, 302, h, 0, nil)
 }

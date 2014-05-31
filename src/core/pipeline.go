@@ -13,6 +13,14 @@ type Pipeline struct {
 
 var pipeline = NewPipeline()
 
+func AddRequestFilter(reqfilter interface{}) {
+	pipeline.Upstream.PushBack(reqfilter)
+}
+
+func AddResponseFilter(resfilter *ResponseFilter) {
+	pipeline.Upstream.PushBack(resfilter)
+}
+
 func NewPipeline() (l *Pipeline) {
 	l = new(Pipeline)
 	l.Upstream = list.New()

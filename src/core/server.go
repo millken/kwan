@@ -122,16 +122,6 @@ func (srv *Server) serve() error {
 			} else {
 				logger.Error("SERVER Accept Error: %v", err)
 			}			
-
-			/*
-				if ope, ok := err.(*net.OpError); ok {
-					if !(ope.Timeout() && ope.Temporary()) {
-						logger.Error("SERVER Accept Error: %v", ope)
-					}
-				} else {
-					logger.Error("SERVER Accept Error: %v", err)
-				}
-			*/
 		} else {
 			go srv.handler(c)
 		}
