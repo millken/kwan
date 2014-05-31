@@ -3,6 +3,7 @@ import (
 	"core"
 	"net/http"
 	"filter"
+	"config"
 )
 
 func filterManager() {
@@ -14,11 +15,12 @@ func filterManager() {
 	ddosfilter := filter.NewDdosFilter()
 	core.AddRequestFilter(ddosfilter)
 
+	cachefilter := filter.NewCacheFilter(filter.NewGoDiskCacheParams(config.GetCacheSetting().Path, config.GetCacheSetting().HotItem))
+	core.AddRequestFilter(cachefilter)
+	core.AddResponseFilter(cachefilter)
+
 	var upstreamfilter filter.UpstreamFilter
 	core.AddRequestFilter(upstreamfilter)
-
-	cachefilter := filter.NewCacheFilter(filter.NewGoDiskCacheParams("./cacher/", 100))
-	core.AddResponseFilter(cachefilter)
 }
 type helloFilter int
 

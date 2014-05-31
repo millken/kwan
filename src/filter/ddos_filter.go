@@ -91,6 +91,7 @@ func (df DdosFilter) FilterRequest(request *core.Request) *http.Response {
 				cache.Incr(ikey)
 			}
 		}
+		request.Status |= STATUS_DDOS
 		response := df.getDdosBody(req.URL.String(), cval, vhost.Ddos.Mode)
 		return core.StringResponse(request.HttpRequest, 200, nil, response)
 	}

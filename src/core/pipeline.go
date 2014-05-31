@@ -2,8 +2,8 @@ package core
 
 import (
 	"container/list"
-	"net/http"
 	"logger"
+	"net/http"
 )
 
 type Pipeline struct {

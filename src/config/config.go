@@ -18,15 +18,13 @@ type Config struct {
 	Hostname  string  `xml:"hostname"`
 	Servename  string  `xml:"servername"`
 	Console string  `xml:"console"`
-	RedisServer     RedisServer  `xml:"redis_server"`
+	CacheSetting     CacheSetting  `xml:"cache_setting"`
 }
 
-type RedisServer struct {
-	PoolSize     int `xml:"pool_size,attr"`
-	Password   string    `xml:"password,attr"`
-	Addr string `xml:",chardata"`	
+type CacheSetting struct {
+	Path     string `xml:"path,attr"`
+	HotItem   int    `xml:"hot_item,attr"`	
 }
-
 //map[ip][port][domain][rule_id]
 //type Sites map[string]map[int]map[string]int
 
@@ -37,7 +35,7 @@ type Sites struct {
 	Domain string
 }
 
-var config Config
+var config *Config
 var configFile string
 var configPath string
 var (
@@ -100,6 +98,13 @@ func GetServername() string {
 func GetConsoleAddr() string {
 	return config.Console
 }
-func GetRedis() RedisServer {
-	return config.RedisServer
+
+func GetCacheSetting() CacheSetting {
+	if config.CacheSetting.Path == "" {
+		config.CacheSetting.Path = os.TempDir()
+	}
+	if config.CacheSetting.HotItem == 0 {
+		config.CacheSetting.HotItem = 10000
+	}	
+	return config.CacheSetting
 }

@@ -9,9 +9,9 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"runtime"
 	"syscall"
 	"time"
-	"runtime"
 )
 
 type Server struct {
@@ -121,7 +121,7 @@ func (srv *Server) serve() error {
 				}
 			} else {
 				logger.Error("SERVER Accept Error: %v", err)
-			}			
+			}
 		} else {
 			go srv.handler(c)
 		}
@@ -163,6 +163,7 @@ func (srv *Server) handler(c net.Conn) {
 		if err != nil {
 			logger.Error("ERROR writing response: <%T %v>", err, err)
 		}
+
 	}
 }
 
@@ -200,7 +201,6 @@ func (srv *Server) handlerWriteResponse(request *Request, res *http.Response, c 
 	if err = res.Write(bw); err != nil {
 		return err
 	}
-
 	// Flush any remaining buffer
 	err = bw.Flush()
 
@@ -209,11 +209,10 @@ func (srv *Server) handlerWriteResponse(request *Request, res *http.Response, c 
 
 func (srv *Server) requestFinished(request *Request, res *http.Response) {
 	//if srv.CompletionCallback != nil {
-		// Don't block the connecion for this
-		//go srv.CompletionCallback(request, res)
+	// Don't block the connecion for this
+	//go srv.CompletionCallback(request, res)
 	//}
 }
-
 
 // Used NoDelay (Nagle's algorithm) where available
 func (srv *Server) setNoDelay(c net.Conn, noDelay bool) bool {

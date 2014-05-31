@@ -10,9 +10,10 @@ import (
 
 type Request struct {
 	ID          string
+	Status      int
 	StartTime   time.Time
 	EndTime     time.Time
-	Overhead     time.Duration
+	Overhead    time.Duration
 	connection  net.Conn
 	RemoteAddr  *net.TCPAddr
 	ServerAddr  string
@@ -27,6 +28,7 @@ func newRequest(request *http.Request, conn net.Conn, startTime time.Time) *Requ
 	fReq.HttpRequest = request
 	fReq.StartTime = startTime
 	fReq.connection = conn
+	fReq.Status = 0
 	if conn != nil {
 		fReq.RemoteAddr = conn.RemoteAddr().(*net.TCPAddr)
 	}
@@ -40,7 +42,6 @@ func newRequest(request *http.Request, conn net.Conn, startTime time.Time) *Requ
 func (fReq *Request) SetServerAddr(addr string) {
 	fReq.ServerAddr = addr
 }
-
 
 func (fReq *Request) finishRequest() {
 	fReq.EndTime = time.Now()

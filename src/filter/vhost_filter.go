@@ -19,7 +19,7 @@ func (vr *VhostRouter) FilterRequest(request *core.Request) *http.Response {
 	request.HttpRequest.URL.Host = request.HttpRequest.Host
 	host, _ := SplitHostPort(request.HttpRequest.Host, 80)
 	dHost, dPort := SplitHostPort(request.ServerAddr, 80)
-	logger.Debug("Routing %s: %s => %s", request.HttpRequest.URL,
+	logger.Finest("Routing %s: %s => %s", request.HttpRequest.URL,
 		request.RemoteAddr, request.ServerAddr)
 
 	vhost, found := config.MatchingVhost(dHost, dPort, host)

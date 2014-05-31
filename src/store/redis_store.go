@@ -2,7 +2,6 @@ package store
 
 import (
 	"github.com/garyburd/redigo/redis"
-	"config"
 	"time"
 	"errors"
 )
@@ -52,9 +51,7 @@ func (s *RedisStore) Set(key string, expiretime int32, data []byte) (error) {
   return nil
 }
 
-func NewRedisStore () (store *RedisStore) {
-	server := config.GetRedis().Addr
-	password := config.GetRedis().Password
+func NewRedisStore (server ,password string) (store *RedisStore) {
 	if server == "" {
 		return nil
 	}

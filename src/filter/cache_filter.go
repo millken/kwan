@@ -2,31 +2,32 @@
 package filter
 
 import (
+	"bytes"
+	"config"
 	"core"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"github.com/golang/groupcache/lru"
 	"github.com/vmihailenco/msgpack"
 	"io/ioutil"
 	"logger"
+	"net/http"
 	"os"
 	"path"
+	"path/filepath"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
-	"net/http"
-	"config"
-	"path/filepath"
-	"regexp"	
-	"strings"
 	"utils"
-	"bytes"
 )
 
-
 type GoDiskCache struct {
-	mutex       sync.RWMutex
-	cachePrefix string
-	memCache    *lru.Cache
+	mutex           sync.RWMutex
+	cachePrefix     string
+	memCache        *lru.Cache
+	memMaxCacheSize int
 } //struct
 
 type Params struct {
@@ -40,6 +41,8 @@ type DataWrapper struct {
 } // struct
 
 var directory string = os.TempDir()
+
+const DefaultTimeFormat = "2006-01-02 15:04:05.999999999"
 
 func NewCacheFilter(p *Params) *GoDiskCache {
 	var items int = 100000
@@ -61,6 +64,7 @@ func NewCacheFilter(p *Params) *GoDiskCache {
 	dc.cachePrefix = path.Join(directory, "godiskcache_")
 	dc.mutex = sync.RWMutex{}
 	dc.memCache = lru.New(items)
+	dc.memMaxCacheSize = 1000000
 
 	return dc
 } //New
@@ -73,22 +77,66 @@ func (dc *GoDiskCache) SetPrefix(prefix string) {
 	dc.cachePrefix = path.Join(directory, prefix)
 }
 
-func (dc *GoDiskCache) FilterResponse(request *core.Request, res *http.Response) {
+func (dc *GoDiskCache) SetMemMaxCacheSize(size int) {
+	dc.memMaxCacheSize = size
+}
+
+func (dc *GoDiskCache) FilterRequest(request *core.Request) (res *http.Response) {
 	req := request.HttpRequest
 	vhost := request.Context["config"].(*config.Vhost)
 	cancache, cacheRule := dc.checkCacheRule(req, vhost)
+	logger.Fine("url = %s, cache = %v , rule = %v", req.URL, cancache, cacheRule)
 	cacheKey := req.URL.String()
+	if cancache {
+		tmppos := strings.Index(cacheKey, "?")
+		if cacheRule.IgnoreParam && tmppos > 0 {
+			cacheKey = cacheKey[:tmppos]
+		}
+		dc.SetPrefix(vhost.Name)
+		data, err := dc.Get(cacheKey, cacheRule.Time)
+		if err != nil {
+			request.HttpRequest.Header.Del("If-None-Match")
+			request.HttpRequest.Header.Del("If-Modified-Since")
+			//request.HttpRequest.Header.Set("Cache-Control", "no-cache, no-store")
+			//request.HttpRequest.Header.Set("Pragma", "no-cache")
+			logger.Warn(err)
+		} else {
+			return dc.serveFromCache(data, request)
+		}
+	}
+	return nil
+}
+func (dc *GoDiskCache) FilterResponse(request *core.Request, res *http.Response) {
+	if request.Status&STATUS_CACHE_HITS == STATUS_CACHE_HITS || request.Status&STATUS_DDOS == STATUS_DDOS {
+		return
+	}
+	req := request.HttpRequest
+	vhost := request.Context["config"].(*config.Vhost)
+	cancache, cacheRule := dc.checkCacheRule(req, vhost)
 
+	cacheKey := req.URL.String()
+	if cancache {
+		tmppos := strings.Index(cacheKey, "?")
+		if cacheRule.IgnoreParam && tmppos > 0 {
+			cacheKey = cacheKey[:tmppos]
+		}
 		if res.StatusCode >= 200 && res.StatusCode < 300 {
 			cached_response, err := utils.NewCachedResponse(res)
 			if err != nil {
 				logger.Warn("write cache error : %s", err.Error())
 				return
 			}
-			go dc.cache(cacheKey, cached_response)
+			if vhost.Limit.MaxCacheSize > 0 {
+				dc.memMaxCacheSize = vhost.Limit.MaxCacheSize
+			} else {
+				dc.memMaxCacheSize = 1000000
+			}
+			dc.SetPrefix(vhost.Name)
+			dc.cache(cacheKey, cached_response)
 			res.Body = ioutil.NopCloser(bytes.NewBuffer(cached_response.Body))
-		}	
-	logger.Debug("%s => %v %v", req.URL, cancache, cacheRule)
+			res.Header.Set("X-Cache", "Miss from "+config.GetHostname())
+		}
+	}
 }
 
 func (dc *GoDiskCache) Get(key string, lifetime int) ([]byte, error) {
@@ -131,7 +179,7 @@ func (dc *GoDiskCache) Get(key string, lifetime int) ([]byte, error) {
 		} //if
 	} //if
 
-	return []byte{}, err
+	return []byte{}, errors.New("cache not found")
 } //Get
 
 func (dc *GoDiskCache) Set(key string, data []byte) error {
@@ -170,7 +218,7 @@ func (dc *GoDiskCache) buildFileName(key string) string {
 	return dc.cachePrefix + hex.EncodeToString(hasher.Sum(nil))
 } //buildFileName
 
-func (dc *GoDiskCache) checkCacheRule(req *http.Request, cacher *config.Vhost)(cache bool, result config.Cache) {
+func (dc *GoDiskCache) checkCacheRule(req *http.Request, cacher *config.Vhost) (cache bool, result config.Cache) {
 	cache = false
 	result = config.Cache{}
 
@@ -218,11 +266,62 @@ func (dc *GoDiskCache) cache(key string, cached_response *utils.CachedResponse) 
 	encoded, err := serializeResponse(cached_response)
 	if err == nil {
 		//fmt.Printf("proxy set cache ok %s %d\n", key, cacheRule.Time)
-		go dc.Set(key, encoded)
+		if len(encoded) <= dc.memMaxCacheSize {
+			go dc.Set(key, encoded)
+		}
 	} else {
 		logger.Warn("proxy set cache failue :%s\n", err)
 	}
 }
+
+func (dc *GoDiskCache) serveFromCache(data []byte, request *core.Request) (res *http.Response) {
+	req := request.HttpRequest
+	cached_response, err := deserializeResponse(data)
+	if err != nil {
+		logger.Warn("get CachedResponse : %s", err)
+		return nil
+	} else {
+		res = core.ByteResponse(req, cached_response.StatusCode, cached_response.Headers, cached_response.Body)
+		request.Status = request.Status | STATUS_CACHE_HITS
+		res.Header.Set("X-Cache", "Hit from "+config.GetHostname())
+	}
+	if if_none_match := req.Header.Get("If-None-Match"); if_none_match != "" {
+		if cached_response.Headers.Get("Etag") == if_none_match {
+			res.StatusCode = 304
+			res.Status = "304 Not Modified"
+			res.Body.Close()
+			res.Body = nil
+			res.ContentLength = 0
+			return
+		}
+	}
+
+	if req.Header.Get("If-Modified-Since") != "" && cached_response.Headers.Get("Last-Modified") != "" {
+		t1, err1 := time.Parse(DefaultTimeFormat, req.Header.Get("If-Modified-Since"))
+		t2, err2 := time.Parse(DefaultTimeFormat, cached_response.Headers.Get("Last-Modified"))
+		if err1 != nil && err2 != nil {
+			if t2.Unix() <= t1.Unix() {
+				res.StatusCode = 304
+				res.Status = "304 Not Modified"
+				res.Body.Close()
+				res.Body = nil
+				res.ContentLength = 0
+				return
+			}
+		}
+	}
+
+	if req.Method == "HEAD" || req.Method == "OPTIONS" {
+		res.Header.Set("Connection", "close")
+		res.Body.Close()
+		res.Body = nil
+	} else {
+		res.Body = ioutil.NopCloser(bytes.NewBuffer(cached_response.Body))
+		//res.ContentLength = cached_response.ContentLength
+	}
+	return
+}
+
 func serializeResponse(res *utils.CachedResponse) (raw []byte, err error) {
 
 	raw, err = msgpack.Marshal(res)
