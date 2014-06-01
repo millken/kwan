@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync"
 	"time"
+	"path/filepath"
 )
 
 // This log writer sends output to a file
@@ -150,6 +151,11 @@ func (w *CommonLogWriter) intRotate() error {
 		}
 	}
 
+	directory := filepath.Dir(w.filename)
+	err := os.MkdirAll(directory, 0744)
+	if err != nil {
+		return err
+	} 
 	// Open the log file
 	fd, err := os.OpenFile(w.filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0660)
 	if err != nil {

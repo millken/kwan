@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"utils"
+	"time"
+	"fmt"
 )
 
 type StatusFilter int
@@ -96,6 +98,7 @@ WHITELIST:
 }
 
 func (c CommonLogger) FilterResponse(request *core.Request, res *http.Response) {
+	//logger.Finest("CommonLogger start")
 	res.Header.Set("Server", config.GetServername())
 	go func() {
 		req := request.HttpRequest
@@ -114,18 +117,52 @@ func (c CommonLogger) FilterResponse(request *core.Request, res *http.Response) 
 				if _, ok := c[vhostname]; !ok {
 
 					nclw := store.NewCommonLogWriter(vl.Addr, vl.RotateDaily)
+					if nclw != nil {
 					nclw.SetRotateDaily(vl.RotateDaily)
 					c[vhostname] = nclw
+					}
 				}
 			}
-
-			err := c[vhostname].Write(utils.BuildCommonLogLine(req, res))
+			if c[vhostname] != nil {
+			err := c[vhostname].Write(c.buildCommonLogLine(request, res))
 			if err != nil {
 				logger.Warn(err)
 			}
 		}
+		}
 	}()
 
+}
+
+func (c CommonLogger) buildCommonLogLine(request *core.Request, res *http.Response) string {
+	req := request.HttpRequest
+	username := "-"
+	if req.URL.User != nil {
+		if name := req.URL.User.Username(); name != "" {
+			username = name
+		}
+	}
+
+	host, _, err := net.SplitHostPort(req.RemoteAddr)
+
+	if err != nil {
+		host = req.RemoteAddr
+	}
+
+	ts := time.Now()
+	return fmt.Sprintf("%s - %s [%s] \"%s %s %s\" %d %d %s \"%s\" \"%s\"\n",
+		host,
+		username,
+		ts.Format("02/Jan/2006:15:04:05 -0700"),
+		req.Method,
+		req.URL.RequestURI(),
+		req.Proto,
+		res.StatusCode,
+		res.ContentLength,
+		req.Host,
+		req.Referer(),
+		req.UserAgent(),
+	)
 }
 func checkIp(ip, ips string) bool {
 	ipint32 := utils.IpStringToI32(ip)

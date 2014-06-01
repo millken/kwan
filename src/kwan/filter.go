@@ -21,6 +21,8 @@ func filterManager() {
 
 	var upstreamfilter filter.UpstreamFilter
 	core.AddRequestFilter(upstreamfilter)
+
+	core.AddResponseFilter(filter.NewCommonLogger())
 }
 type helloFilter int
 

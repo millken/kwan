@@ -7,7 +7,6 @@ import (
 	"core"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"github.com/golang/groupcache/lru"
 	"github.com/vmihailenco/msgpack"
 	"io/ioutil"
@@ -94,12 +93,14 @@ func (dc *GoDiskCache) FilterRequest(request *core.Request) (res *http.Response)
 		}
 		dc.SetPrefix(vhost.Name)
 		data, err := dc.Get(cacheKey, cacheRule.Time)
-		if err != nil {
+		if len(data) == 0 || err != nil {
 			request.HttpRequest.Header.Del("If-None-Match")
 			request.HttpRequest.Header.Del("If-Modified-Since")
 			//request.HttpRequest.Header.Set("Cache-Control", "no-cache, no-store")
 			//request.HttpRequest.Header.Set("Pragma", "no-cache")
-			logger.Warn(err)
+			if(err != nil) {
+				logger.Warn(err)
+			}
 		} else {
 			return dc.serveFromCache(data, request)
 		}
@@ -132,7 +133,7 @@ func (dc *GoDiskCache) FilterResponse(request *core.Request, res *http.Response)
 				dc.memMaxCacheSize = 1000000
 			}
 			dc.SetPrefix(vhost.Name)
-			dc.cache(cacheKey, cached_response)
+			go dc.cache(cacheKey, cached_response)
 			res.Body = ioutil.NopCloser(bytes.NewBuffer(cached_response.Body))
 			res.Header.Set("X-Cache", "Miss from "+config.GetHostname())
 		}
@@ -170,8 +171,7 @@ func (dc *GoDiskCache) Get(key string, lifetime int) ([]byte, error) {
 				//try reading entire file
 				if data, err := ioutil.ReadAll(file); err == nil {
 					// update the cache with this value
-					dc.memCache.Add(key, DataWrapper{Ts: fi.ModTime(),
-						Data: data})
+					dc.memCache.Add(key, DataWrapper{Ts: fi.ModTime(),Data: data})
 
 					return data, err
 				} //if
@@ -179,7 +179,7 @@ func (dc *GoDiskCache) Get(key string, lifetime int) ([]byte, error) {
 		} //if
 	} //if
 
-	return []byte{}, errors.New("cache not found")
+	return []byte{}, err
 } //Get
 
 func (dc *GoDiskCache) Set(key string, data []byte) error {

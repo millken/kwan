@@ -26,6 +26,9 @@ func (h *SocketHandler) Write(p string) ( err error) {
 	}
 
 	buf := []byte(p)
+	if h.c == nil {
+		return
+	}	
 	_, err = h.c.Write(buf)
 	if err != nil {
 		h.c = nil
