@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 	"utils"
+	"logger"
 )
 
 const (
@@ -91,7 +92,13 @@ func (df DdosFilter) FilterRequest(request *core.Request) *http.Response {
 				cache.Incr(ikey)
 				hits := cache.Get(ikey).(int)
 				if hits >= vhost.Ddos.Hits {
-					go utils.AddToBlock(ip, vhost.Ddos.BlockTime)
+					logger.Info("block ip [%s] from %s", ip, vhostname)
+					go func() {
+						err := utils.AddToBlock(ip, vhost.Ddos.BlockTime)
+						if err != nil {
+							logger.Warn("block ip fail %s", err)
+						}
+					}()
 				}
 			}
 		}

@@ -58,24 +58,3 @@ func listenSSL(addr string, certs []core.Certificates) {
 		logger.Error("Could not start server: %s", err)
 	}
 }
-/*
-func makepipeline(scheme string) *falcore.Pipeline {
-	pipeline := falcore.NewPipeline()
-
-	// upstream
-	//pipeline.Upstream.PushBack(helloFilter)
-	pipeline.Upstream.PushBack(&webfilter.VhostRouter{scheme})
-
-	var statusfilter webfilter.StatusFilter
-	pipeline.Upstream.PushBack(statusfilter)
-	pipeline.Downstream.PushBack(webfilter.NewCommonLogger())
-
-	ddosfilter := webfilter.NewDdosFilter()
-	pipeline.Upstream.PushBack(ddosfilter)
-
-	cachefilter := webfilter.NewCacheFilter()
-	pipeline.Upstream.PushBack(cachefilter)
-	//server.CompletionCallback = reqCB
-	return pipeline
-}
-*/

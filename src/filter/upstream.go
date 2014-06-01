@@ -69,6 +69,7 @@ func (u *Upstream) FilterRequest(request *core.Request) (res *http.Response) {
 	req.Header.Set("Connection", "Keep-Alive")
 	var upstrRes *http.Response
 	upstrRes, err = u.Transport.transport.RoundTrip(req)
+	//logger.Debug("%v", upstrRes)
 	diff := TimeDiff(before, time.Now())
 	if err == nil {
 		// Copy response over to new record.  Remove connection noise.  Add some sanity.

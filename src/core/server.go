@@ -162,6 +162,9 @@ func (srv *Server) handler(c net.Conn) {
 		err = srv.handlerWriteResponse(request, res, c, w)
 		if err != nil {
 			logger.Error("ERROR writing response: <%T %v>", err, err)
+		}else{
+			//这里原本不需要return，但是在遇到腾讯视频过期405的时候，一直不关闭连接，return 就可以了。不知道什么原因
+			return
 		}
 
 	}
@@ -197,6 +200,7 @@ func (srv *Server) handlerWriteResponse(request *Request, res *http.Response, c 
 	}
 
 	var err error
+
 	// Write response
 	if err = res.Write(bw); err != nil {
 		return err
