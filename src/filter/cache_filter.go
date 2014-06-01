@@ -98,7 +98,7 @@ func (dc *GoDiskCache) FilterRequest(request *core.Request) (res *http.Response)
 			request.HttpRequest.Header.Del("If-Modified-Since")
 			//request.HttpRequest.Header.Set("Cache-Control", "no-cache, no-store")
 			//request.HttpRequest.Header.Set("Pragma", "no-cache")
-			if(err != nil) {
+			if err != nil {
 				logger.Warn(err)
 			}
 		} else {
@@ -171,7 +171,7 @@ func (dc *GoDiskCache) Get(key string, lifetime int) ([]byte, error) {
 				//try reading entire file
 				if data, err := ioutil.ReadAll(file); err == nil {
 					// update the cache with this value
-					dc.memCache.Add(key, DataWrapper{Ts: fi.ModTime(),Data: data})
+					dc.memCache.Add(key, DataWrapper{Ts: fi.ModTime(), Data: data})
 
 					return data, err
 				} //if
@@ -195,8 +195,14 @@ func (dc *GoDiskCache) Set(key string, data []byte) error {
 	dc.mutex.Lock()
 	defer dc.mutex.Unlock()
 
+	buildFileName := dc.buildFileName(key)
+	err = os.MkdirAll(buildFileName[:len(buildFileName)-65], 0744)
+
+	if err != nil {
+		return err
+	}
 	//open the file
-	if file, err := os.Create(dc.buildFileName(key)); err == nil {
+	if file, err := os.Create(buildFileName); err == nil {
 		_, err = file.Write(data)
 
 		// store it in the in-memory cache
@@ -215,7 +221,8 @@ func (dc *GoDiskCache) buildFileName(key string) string {
 	//hash the byte slice and return the resulting string
 	hasher := sha256.New()
 	hasher.Write([]byte(key))
-	return dc.cachePrefix + hex.EncodeToString(hasher.Sum(nil))
+	hash := hex.EncodeToString(hasher.Sum(nil))
+	return dc.cachePrefix + "/" + hash[62:] + "/" + hash
 } //buildFileName
 
 func (dc *GoDiskCache) checkCacheRule(req *http.Request, cacher *config.Vhost) (cache bool, result config.Cache) {

@@ -3,15 +3,15 @@ package filter
 import (
 	"config"
 	"core"
+	"fmt"
 	"logger"
 	"net"
 	"net/http"
 	"store"
 	"strconv"
 	"strings"
-	"utils"
 	"time"
-	"fmt"
+	"utils"
 )
 
 type StatusFilter int
@@ -118,17 +118,17 @@ func (c CommonLogger) FilterResponse(request *core.Request, res *http.Response) 
 
 					nclw := store.NewCommonLogWriter(vl.Addr, vl.RotateDaily)
 					if nclw != nil {
-					nclw.SetRotateDaily(vl.RotateDaily)
-					c[vhostname] = nclw
+						nclw.SetRotateDaily(vl.RotateDaily)
+						c[vhostname] = nclw
 					}
 				}
 			}
 			if c[vhostname] != nil {
-			err := c[vhostname].Write(c.buildCommonLogLine(request, res))
-			if err != nil {
-				logger.Warn(err)
+				err := c[vhostname].Write(c.buildCommonLogLine(request, res))
+				if err != nil {
+					logger.Warn(err)
+				}
 			}
-		}
 		}
 	}()
 

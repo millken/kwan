@@ -55,6 +55,7 @@ type Limit struct {
 
 type Host struct {
 	Ip     string `xml:"ip,attr"`
+	Ups     string `xml:"ups,attr"` //负载均衡
 	Port   int    `xml:"port,attr"`
 	Domain string `xml:",chardata"`
 }

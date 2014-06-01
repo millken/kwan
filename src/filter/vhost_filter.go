@@ -32,7 +32,7 @@ func (vr VhostRouter) FilterRequest(request *core.Request) *http.Response {
 	return nil
 }
 
-func GetSourceIP(domain string, port int, vhost *config.Vhost) (sHost string, sPort int) {
+func GetSourceIP(domain string, port int, vhost *config.Vhost) (sHost string, sPort int, ups string) {
 	sHost = ""
 	sPort = 0
 	domains := []string{
@@ -48,6 +48,7 @@ func GetSourceIP(domain string, port int, vhost *config.Vhost) (sHost string, sP
 				} else {
 					sPort = host.Port
 				}
+				ups = host.Ups
 			}
 		}
 	}

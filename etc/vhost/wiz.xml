@@ -2,7 +2,7 @@
 <bind>:80</bind>
 <host ip="182.92.20.26" port="0">www.wiz.cn</host>
 <host ip="182.92.20.26" port="0">wiz.cn</host>
-<host ip="220.162.97.165" port="0">cdn.wiz.cn</host>
+<host ip="220.162.97.165" ups="24.126.126.108:0:1,220.162.97.165:0:5,218.59.186.75:0:5" port="0">cdn.wiz.cn</host>
 <host ip="42.121.253.45" port="0">blog.wiz.cn</host>
 <host ip="182.140.163.45" port="0">test.lo</host>
 

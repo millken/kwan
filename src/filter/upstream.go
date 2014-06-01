@@ -117,11 +117,11 @@ func (u *Upstream) FilterRequest(request *core.Request) (res *http.Response) {
 		if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
 			logger.Error("%s Upstream Timeout error: %v", request.ID, err)
 			res = core.StringResponse(req, 504, nil, "Gateway Timeout\n")
-			//request.CurrentStage.Status = 2 // Fail
+			request.Status = 2 // Fail
 		} else {
 			logger.Error("%s Upstream error: %v", request.ID, err)
 			res = core.StringResponse(req, 502, nil, "Bad Gateway\n")
-			//request.CurrentStage.Status = 2 // Fail
+			request.Status = 2 // Fail
 		}
 	}
 	logger.Debug("%s [%s] [%s] %s s=%d Time=%.4f", request.ID, req.Method, u.Transport.host, req.URL, res.StatusCode, diff)
@@ -153,32 +153,29 @@ func (u *Upstream) QueueLength() int64 {
 	return ql
 }
 
-func (u *Upstream) ping() (up bool, ok bool) {
-	if u.PingPath != "" {
-		// the url must be syntactically valid for this to work but the host will be ignored because we
-		// are overriding the connection always
-		request, err := http.NewRequest("GET", "http://localhost"+u.PingPath, nil)
-		request.Header.Set("Connection", "Keep-Alive") // not sure if this should be here for a ping
-		if err != nil {
-			logger.Error("Bad Ping request: %v", err)
-			return false, true
-		}
-		res, err := u.Transport.transport.RoundTrip(request)
-
-		if err != nil {
-			logger.Error("Failed Ping to %v:%v: %v", u.Transport.host, u.Transport.port, err)
-			return false, true
-		} else {
-			res.Body.Close()
-		}
-		if res.StatusCode == 200 {
-			return true, true
-		}
-		logger.Error("Failed Ping to %v:%v: %v", u.Transport.host, u.Transport.port, res.Status)
-		// bad status
-		return false, true
+func (u *Upstream) ping(host string) (up bool) {
+	// the url must be syntactically valid for this to work but the host will be ignored because we
+	// are overriding the connection always
+	request, err := http.NewRequest("GET", "http://"+host+"/", nil)
+	request.Header.Set("Connection", "Keep-Alive") // not sure if this should be here for a ping
+	if err != nil {
+		logger.Error("Bad Ping request: %v", err)
+		return false
 	}
-	return false, false
+	res, err := u.Transport.transport.RoundTrip(request)
+
+	if err != nil {
+		logger.Error("Failed Ping to %v:%v: %v", u.Transport.host, u.Transport.port, err)
+		return false
+	} else {
+		res.Body.Close()
+	}
+	if res.StatusCode == 200 {
+		return true
+	}
+	logger.Error("Failed Ping to %v:%v: %v", u.Transport.host, u.Transport.port, res.Status)
+	// bad status
+	return false
 }
 
 // Helper for calculating times.  return value in Seconds

@@ -10,7 +10,7 @@ import (
 
 type Request struct {
 	ID          string
-	Status      int
+	Status      byte // 0 running, 1 skip, 2 fail
 	StartTime   time.Time
 	EndTime     time.Time
 	Overhead    time.Duration

@@ -4,6 +4,7 @@ import (
 	"cache"
 	"config"
 	"core"
+	"logger"
 	"math/rand"
 	"net"
 	"net/http"
@@ -12,7 +13,6 @@ import (
 	"sync/atomic"
 	"time"
 	"utils"
-	"logger"
 )
 
 const (

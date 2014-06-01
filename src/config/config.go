@@ -47,7 +47,7 @@ var (
 )
 func init() {
 	flag.StringVar(&configFile, "c", "", "config file path")
-	flag.IntVar(&debugMode, "d", 2, "debug level. 0=FINEST,1=FINE,2=DEBUG,3=TRACE,4=INFO,5=WARNING,6=ERROR,7=CRITICAL")
+	flag.IntVar(&debugMode, "d", 4, "debug level. 0=FINEST,1=FINE,2=DEBUG,3=TRACE,4=INFO(default),5=WARNING,6=ERROR,7=CRITICAL")
 	flag.Parse()
 	if configFile == "" {
 		configFile = "/etc/kwan/config.xml"
