@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 	"utils"
+	"io/ioutil"
 )
 
 type StatusFilter int
@@ -99,8 +100,11 @@ WHITELIST:
 
 func (s StatusFilter) FilterResponse(request *core.Request, res *http.Response) {
 	if strings.Index("|401|402|403|404|405|501|502|503|504|505|", strconv.Itoa(res.StatusCode)) > 0 {
-		response := fmt.Sprintf("get status: %s", res.StatusCode)
-		res = core.StringResponse(request.HttpRequest, res.StatusCode, nil, response)
+		response := fmt.Sprintf("get status: %d", res.StatusCode)
+		//res = core.StringResponse(request.HttpRequest, 403, nil, "you has been blocked!\n")
+		//这里不能直接使用上面的res=，否则不会生效
+		res.ContentLength = int64(len(response))
+		res.Body = ioutil.NopCloser(strings.NewReader(response))
 	}
 }
 

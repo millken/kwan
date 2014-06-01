@@ -208,6 +208,7 @@ func (srv *Server) handlerWriteResponse(request *Request, res *http.Response, c 
 	if err = res.Write(bw); err != nil {
 		return err
 	}
+
 	// Flush any remaining buffer
 	err = bw.Flush()
 
