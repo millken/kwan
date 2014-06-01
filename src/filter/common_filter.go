@@ -97,6 +97,13 @@ WHITELIST:
 	return nil
 }
 
+func (s StatusFilter) FilterResponse(request *core.Request, res *http.Response) {
+	if strings.Index("|401|402|403|404|405|501|502|503|504|505|", strconv.Itoa(res.StatusCode)) > 0 {
+		response := fmt.Sprintf("get status: %s", res.StatusCode)
+		res = core.StringResponse(request.HttpRequest, res.StatusCode, nil, response)
+	}
+}
+
 func (c CommonLogger) FilterResponse(request *core.Request, res *http.Response) {
 	//logger.Finest("CommonLogger start")
 	res.Header.Set("Server", config.GetServername())

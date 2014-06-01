@@ -20,9 +20,9 @@ func filterManager() {
 	core.AddRequestFilter(cachefilter)
 	core.AddResponseFilter(cachefilter)
 
-	var upstreamfilter filter.UpstreamFilter
-	core.AddRequestFilter(upstreamfilter)
+	core.AddRequestFilter(filter.NewUpstreamFilter())
 
+	core.AddResponseFilter(statusfilter)
 	core.AddResponseFilter(filter.NewCommonLogger())
 }
 type helloFilter int

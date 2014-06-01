@@ -157,6 +157,7 @@ func (u *Upstream) ping(host string) (up bool) {
 	// the url must be syntactically valid for this to work but the host will be ignored because we
 	// are overriding the connection always
 	request, err := http.NewRequest("GET", "http://"+host+"/", nil)
+	request.Header.Set("User-Agent", "googleddos pinger")
 	request.Header.Set("Connection", "Keep-Alive") // not sure if this should be here for a ping
 	if err != nil {
 		logger.Error("Bad Ping request: %v", err)

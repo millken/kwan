@@ -56,7 +56,7 @@ func (t *UpstreamTransport) dial(n, a string) (c net.Conn, err error) {
 
 	logger.Fine("Dialing connection to %v", addr)
 	var ctcp net.Conn
-	ctcp, err = net.DialTimeout("tcp4", addr.String(), time.Second*2)
+	ctcp, err = net.DialTimeout("tcp4", addr.String(), time.Second*5)
 	if err != nil {
 		logger.Error("Dial Failed: %v", err)
 		return
@@ -70,7 +70,7 @@ func (t *UpstreamTransport) dial(n, a string) (c net.Conn, err error) {
 		c = ctcp
 	}
 
-	return  
+	return
 }
 
 func (t *UpstreamTransport) lookupIp() (addr *net.TCPAddr, err error) {

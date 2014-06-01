@@ -3,15 +3,17 @@ package filter
 import (
 	"config"
 	"core"
+	"logger"
 	"net/http"
 	"time"
-	"strings"
-	"strconv"
-	"logger"
 )
 
-type UpstreamFilter int
+type UpstreamFilter map[string]*UpstreamPool
 
+func NewUpstreamFilter() (f UpstreamFilter) {
+	f = make(UpstreamFilter)
+	return
+}
 
 func (up UpstreamFilter) FilterRequest(request *core.Request) (res *http.Response) {
 	vhost := request.Context["config"].(*config.Vhost)
@@ -24,29 +26,34 @@ func (up UpstreamFilter) FilterRequest(request *core.Request) (res *http.Respons
 	if vhost.Limit.Timeout > 0 {
 		timeout = time.Duration(vhost.Limit.Timeout) * time.Second
 	}
-	if strings.Index(ups, ",") > 0 { //loadblanence
-		var upstreams []*UpstreamEntry
-		for _, u := range strings.Split(ups, ",") {
-			parts := strings.Split(u, ":")
-			if len(parts) == 3 {
-			sHost = parts[0]
-			if sPort, _ = strconv.Atoi(parts[1]); sPort == 0 {
-				sPort = port
+	isUsePool := false
+	if ups != "" {
+		if _, ok := up[ups]; !ok {
+			var upstreams []*UpstreamEntry
+			upsgroup := config.GetUpstream()
+			if _, ok = upsgroup[ups]; ok {
+				for _, uv := range upsgroup[ups].Host {
+					if uv.Port == 0 {
+						sPort = port
+					} else {
+						sPort = uv.Port
+					}
+					upstreams = append(upstreams, &UpstreamEntry{
+						NewUpstream(NewUpstreamTransport(uv.Ip, sPort, timeout, nil)),
+						uv.Weight,
+					})
+				}
+				up[ups] = NewUpstreamPool(host, upstreams)
+				isUsePool = true
 			}
-			weight, err := strconv.Atoi(parts[2])
-			if err != nil {
-				weight = 5
-			}
-			logger.Debug("%s:%d:%d", sHost, sPort, weight)
-			upstreams = append(upstreams, &UpstreamEntry{
-				NewUpstream(NewUpstreamTransport(sHost, sPort, timeout, nil)),
-				weight,
-				})
+		} else {
+			isUsePool = true
 		}
-		}
-		ups_pool  := NewUpstreamPool(host, upstreams)
-		res = ups_pool.FilterRequest(request)
-	}else{
+	}
+	if isUsePool == true { //loadblanence
+		logger.Info("use UpstreamPool")
+		res = up[ups].FilterRequest(request)
+	} else {
 		proxyFilter := NewUpstream(NewUpstreamTransport(sHost, sPort, timeout, nil))
 		res = proxyFilter.FilterRequest(request)
 	}

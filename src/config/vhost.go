@@ -24,6 +24,7 @@ type Vhost struct {
 	BlackList BlackWhiteList `xml:"blacklist"`
 	Log Log `xml:"log"`
 	Request Request `xml:"request"`
+	Ups []Ups `xml:"ups"` //负载均衡组
 }
 
 type Request struct {
@@ -55,7 +56,7 @@ type Limit struct {
 
 type Host struct {
 	Ip     string `xml:"ip,attr"`
-	Ups     string `xml:"ups,attr"` //负载均衡
+	Ups     string `xml:"ups,attr"` //负载均衡组名
 	Port   int    `xml:"port,attr"`
 	Domain string `xml:",chardata"`
 }
@@ -81,11 +82,23 @@ type Log struct {
 	RotateDaily bool `xml:"rotate_daily,attr"`
 	Addr  string `xml:",chardata"`
 }
+
+type Ups struct {
+	Name string  `xml:"name,attr"` //负载均衡组名，调用时用到
+	Host []UpsHost `xml:"host"`
+}
+
+type UpsHost struct {
+	Ip string `xml:"ip,attr"`
+	Port   int    `xml:"port,attr"` //端口，为0的情况则与请求相同
+	Weight int `xml:"weight,attr"` //权重
+}
 func LoadVhostDir()  {
 	newsites := make(map[Sites]int)
 	newlisten	:= make(map[string]int)
 	newssl	:= make(map[string][]Ssl)
 	newvhosts := make(map[int]Vhost)
+	newups := make(map[string]Ups)
 	index := 1000	
 	for _, dir := range config.VhostDir {
 		files, err := filepath.Glob(configPath + dir)
@@ -128,6 +141,9 @@ func LoadVhostDir()  {
 						newsites[Sites{ip, port, host.Domain}] = index
 					}					
 				}
+				for _, up := range vhost.Ups {
+					newups[up.Name] = up
+				}
 			config.Vhosts = append(config.Vhosts, vhost)
 			index++ 
 		}
@@ -136,6 +152,8 @@ func LoadVhostDir()  {
 	listen = newlisten
 	vhosts = newvhosts
 	ssl_listen = newssl
+	ups = newups
+	//logger.Debug("%v", ups)
 }
 
 

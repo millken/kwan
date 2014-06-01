@@ -44,6 +44,7 @@ var (
 	listen map[string]int
 	ssl_listen map[string][]Ssl
 	vhosts map[int]Vhost
+	ups map[string]Ups
 )
 func init() {
 	flag.StringVar(&configFile, "c", "", "config file path")
@@ -88,6 +89,10 @@ func GetListen() map[string]int {
 
 func GetSslListen() map[string][]Ssl {
 	return ssl_listen
+}
+
+func GetUpstream() map[string]Ups {
+	return ups
 }
 
 func GetHostname() string {
