@@ -69,4 +69,7 @@ func Base64_decode(str string) string {
 	return string(data)
 }
 
+func AddToBlock(ip string, blocktime int) {
+	
+}
 //http://play.golang.org/p/gmYKrUcx4D

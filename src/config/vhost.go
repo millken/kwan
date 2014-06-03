@@ -64,6 +64,8 @@ type Ddos struct {
 	Rtime int32 `xml:"rtime,attr"`
 	Stime int32 `xml:"stime,attr"`	
 	Mode int32 `xml:"mode,attr"`
+	Hits int `xml:"hits,attr"`
+	BlockTime int `xml:"blocktime,attr"`
 }
 
 type BlackWhiteList struct {

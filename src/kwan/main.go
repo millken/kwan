@@ -44,7 +44,7 @@ func main() {
 	config.Read()
 	go filterManager()
 	listenServer()
-	go StartConsole()
+	StartConsole()
 	sigChan := make(chan os.Signal, 3)
 
 	signal.Notify(sigChan, os.Interrupt, os.Kill)

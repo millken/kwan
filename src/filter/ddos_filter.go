@@ -89,6 +89,10 @@ func (df DdosFilter) FilterRequest(request *core.Request) *http.Response {
 				cache.Put(ikey, 1, 600)
 			} else {
 				cache.Incr(ikey)
+				hits := cache.Get(ikey).(int)
+				if hits >= vhost.Ddos.Hits {
+					go utils.AddToBlock(ip, vhost.Ddos.BlockTime)
+				}
 			}
 		}
 		request.Status |= STATUS_DDOS
