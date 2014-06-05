@@ -7,8 +7,9 @@ import (
 )
 
 func filterManager() {
-	//var filter2 helloFilter
-	core.AddRequestFilter(&filter.VhostRouter{"http"})
+	var vhostRouter filter.VhostRouter
+	core.AddRequestFilter(vhostRouter)
+	
 	var statusfilter filter.StatusFilter	
 	core.AddRequestFilter(statusfilter)
 

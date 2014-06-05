@@ -10,12 +10,9 @@ import (
 	"strings"
 )
 
-type VhostRouter struct {
-	Scheme string
-}
+type VhostRouter int
 
-func (vr *VhostRouter) FilterRequest(request *core.Request) *http.Response {
-	request.HttpRequest.URL.Scheme = vr.Scheme
+func (vr VhostRouter) FilterRequest(request *core.Request) *http.Response {
 	request.HttpRequest.URL.Host = request.HttpRequest.Host
 	host, _ := SplitHostPort(request.HttpRequest.Host, 80)
 	dHost, dPort := SplitHostPort(request.ServerAddr, 80)

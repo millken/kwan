@@ -10,9 +10,9 @@
 <cache base="true" time="3600" />
 <cache file_ext="png" ignore_param="false" time="60" />
 <cache file_ext="jpg|js|css|gif|html" static="true" ignore_param="true" nocache="true" time="360" />
-<ddos request="10" rtime="1" stime="10" mode="11" hits="50" blocktime="300" />
+<ddos request="1" rtime="1" stime="10" mode="11" hits="50" blocktime="300" />
 <log status="0" type="udp">127.0.0.1:3333</log>
-<log status="1" type="file" rotate_daily="false">/data/logs/wiz.access.log</log>
+<log status="0" type="file" rotate_daily="false">/data/logs/wiz.access.log</log>
 <request>
 	<http2https>aa.wiz.cn</http2https>
 

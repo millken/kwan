@@ -43,16 +43,14 @@ func listenServer() {
 }
 
 func listen(addr string) {
-	//pipeline := makepipeline("http")
-	server := core.NewServer(addr)
+	server := core.NewServer(addr, "http")
 	if err := server.ListenAndServe(); err != nil {
 		logger.Exitf("Could not start server[%s]: %s", addr, err)
 	}
 }
 
 func listenSSL(addr string, certs []core.Certificates) {
-	//spipeline := makepipeline("https")
-	server := core.NewServer(addr)
+	server := core.NewServer(addr, "https")
 
 	if err := server.ListenAndServeTLSSNI(certs); err != nil {
 		logger.Error("Could not start server: %s", err)

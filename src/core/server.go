@@ -18,6 +18,7 @@ type Server struct {
 	Addr         string
 	listener     net.Listener
 	listenerFile *os.File
+	Scheme	string
 }
 
 type Certificates struct {
@@ -29,9 +30,10 @@ var (
 	perIpConnTracker = createPerIpConnTracker()
 )
 
-func NewServer(addr string) *Server {
+func NewServer(addr, scheme string) *Server {
 	s := new(Server)
 	s.Addr = addr
+	s.Scheme = scheme
 	return s
 }
 
@@ -154,6 +156,7 @@ func (srv *Server) handler(c net.Conn) {
 			return
 		}
 		startTime = time.Now()
+		req.URL.Scheme = srv.Scheme 
 		request := newRequest(req, c, startTime)
 		request.SetServerAddr(srv.listener.Addr().String())
 
