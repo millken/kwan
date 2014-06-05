@@ -1,9 +1,8 @@
-package webfilter
+package filter
 
 import (
 	"config"
-	"github.com/millken/falcore"
-	"github.com/millken/falcore/responder"
+	"core"
 	"logger"
 	"net"
 	"net/http"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"utils"
+	"time"
+	"fmt"
 )
 
 type StatusFilter int
@@ -22,11 +23,11 @@ func NewCommonLogger() (df CommonLogger) {
 	return
 }
 
-func (s StatusFilter) FilterRequest(request *falcore.Request) *http.Response {
+func (s StatusFilter) FilterRequest(request *core.Request) *http.Response {
 	req := request.HttpRequest
 	vhost := request.Context["config"].(*config.Vhost)
 	if vhost.Status == 1 {
-		return falcore.StringResponse(request.HttpRequest, 200, nil, "the site was paused!\n")
+		return core.StringResponse(request.HttpRequest, 200, nil, "the site was paused!\n")
 	}
 	RemoteAddr := request.RemoteAddr.String()
 	ip, _, _ := net.SplitHostPort(RemoteAddr)
@@ -37,7 +38,7 @@ func (s StatusFilter) FilterRequest(request *falcore.Request) *http.Response {
 		if req.URL.Scheme == "http" && req.Host == host {
 			req.URL.Scheme = "https"
 			req.URL.Host = req.Host
-			return responder.RedirectResponse(req, req.URL.String())
+			return core.RedirectResponse(req, req.URL.String())
 		}
 	}
 	request.Context["blacklist"] = false
@@ -91,12 +92,13 @@ WHITELIST:
 	if request.Context["whitelist"] == true {
 		request.Context["blacklist"] = false
 	} else if request.Context["blacklist"] == true {
-		return falcore.StringResponse(request.HttpRequest, 403, nil, "you has been blocked!\n")
+		return core.StringResponse(request.HttpRequest, 403, nil, "you has been blocked!\n")
 	}
 	return nil
 }
 
-func (c CommonLogger) FilterResponse(request *falcore.Request, res *http.Response) {
+func (c CommonLogger) FilterResponse(request *core.Request, res *http.Response) {
+	//logger.Finest("CommonLogger start")
 	res.Header.Set("Server", config.GetServername())
 	go func() {
 		req := request.HttpRequest
@@ -115,18 +117,52 @@ func (c CommonLogger) FilterResponse(request *falcore.Request, res *http.Respons
 				if _, ok := c[vhostname]; !ok {
 
 					nclw := store.NewCommonLogWriter(vl.Addr, vl.RotateDaily)
+					if nclw != nil {
 					nclw.SetRotateDaily(vl.RotateDaily)
 					c[vhostname] = nclw
+					}
 				}
 			}
-
-			err := c[vhostname].Write(utils.BuildCommonLogLine(req, res))
+			if c[vhostname] != nil {
+			err := c[vhostname].Write(c.buildCommonLogLine(request, res))
 			if err != nil {
 				logger.Warn(err)
 			}
 		}
+		}
 	}()
 
+}
+
+func (c CommonLogger) buildCommonLogLine(request *core.Request, res *http.Response) string {
+	req := request.HttpRequest
+	username := "-"
+	if req.URL.User != nil {
+		if name := req.URL.User.Username(); name != "" {
+			username = name
+		}
+	}
+
+	host, _, err := net.SplitHostPort(req.RemoteAddr)
+
+	if err != nil {
+		host = req.RemoteAddr
+	}
+
+	ts := time.Now()
+	return fmt.Sprintf("%s - %s [%s] \"%s %s %s\" %d %d %s \"%s\" \"%s\"\n",
+		host,
+		username,
+		ts.Format("02/Jan/2006:15:04:05 -0700"),
+		req.Method,
+		req.URL.RequestURI(),
+		req.Proto,
+		res.StatusCode,
+		res.ContentLength,
+		req.Host,
+		req.Referer(),
+		req.UserAgent(),
+	)
 }
 func checkIp(ip, ips string) bool {
 	ipint32 := utils.IpStringToI32(ip)

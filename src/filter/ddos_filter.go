@@ -1,9 +1,9 @@
-package webfilter
+package filter
 
 import (
 	"cache"
 	"config"
-	"github.com/millken/falcore"
+	"core"
 	"math/rand"
 	"net"
 	"net/http"
@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 	"utils"
+	"logger"
 )
 
 const (
@@ -32,13 +33,13 @@ type DdosFilterThrottler struct {
 }
 
 // type check ,if no method ,compile error
-var _ falcore.RequestFilter = new(DdosFilter)
+var _ core.RequestFilter = new(DdosFilter)
 
 func NewDdosFilter() (df DdosFilter) {
 	df = make(DdosFilter)
 	return
 }
-func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
+func (df DdosFilter) FilterRequest(request *core.Request) *http.Response {
 	req := request.HttpRequest
 	vhost := request.Context["config"].(*config.Vhost)
 
@@ -47,7 +48,7 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 	}
 	vhostname := vhost.Name
 
-	//falcore.Debug("%s r=%d rt=%d m=%d st=%d", vhostname, vhost.Ddos.Request, vhost.Ddos.Rtime, vhost.Ddos.Mode, vhost.Ddos.Stime)
+	//core.Debug("%s r=%d rt=%d m=%d st=%d", vhostname, vhost.Ddos.Request, vhost.Ddos.Rtime, vhost.Ddos.Mode, vhost.Ddos.Stime)
 
 	if _, ok := df[vhostname]; !ok {
 		df[vhostname] = new(DdosFilterThrottler)
@@ -72,7 +73,7 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 			cval = utils.RandomString(utils.RandomInt(3, 7))
 			cache.Put(ckey, cval, 5)
 
-		}else{
+		} else {
 			cval = cval1.(string)
 			if cval == "pass" {
 				return nil
@@ -87,12 +88,23 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 		} else {
 			if cache.IsExist(ikey) == false {
 				cache.Put(ikey, 1, 600)
-			}else{
+			} else {
 				cache.Incr(ikey)
+				hits := cache.Get(ikey).(int)
+				if hits >= vhost.Ddos.Hits {
+					logger.Info("block ip [%s] from %s", ip, vhostname)
+					go func() {
+						err := utils.AddToBlock(ip, vhost.Ddos.BlockTime)
+						if err != nil {
+							logger.Warn("block ip fail %s", err)
+						}
+					}()
+				}
 			}
 		}
+		request.Status |= STATUS_DDOS
 		response := df.getDdosBody(req.URL.String(), cval, vhost.Ddos.Mode)
-		return falcore.StringResponse(request.HttpRequest, 200, nil, response)
+		return core.StringResponse(request.HttpRequest, 200, nil, response)
 	}
 	if ct != nil && request.Context["whitelist"] == false {
 		atomic.AddInt64(&df[vhostname].count, 1)
@@ -103,7 +115,7 @@ func (df DdosFilter) FilterRequest(request *falcore.Request) *http.Response {
 				case <-ct.C:
 					rps := atomic.LoadInt64(&df[vhostname].count)
 					atomic.StoreInt64(&df[vhostname].count, 0)
-					//falcore.Debug("%s RPS: %d", vhostname, atomic.LoadInt64(&df[vhostname].count))
+					//core.Debug("%s RPS: %d", vhostname, atomic.LoadInt64(&df[vhostname].count))
 					if rps >= vhost.Ddos.Request {
 						df[vhostname].status = true
 					}

@@ -32,7 +32,7 @@ type Request struct {
 
 type Cache struct {
 	Base bool `xml:"base,attr"`
-	Time int32 `xml:"time,attr"`
+	Time int `xml:"time,attr"`
 	FileExt string `xml:"file_ext,attr"`
 	Static bool `xml:"static,attr"`
  	Nocache bool `xml:"nocache,attr"`
@@ -50,7 +50,7 @@ type Ssl struct {
 
 type Limit struct {
 	Timeout int `xml:"timeout,attr"`
-	Speed int `xml:"speed,attr"`
+	MaxCacheSize int `xml:"max_cache_size,attr"`
 }
 
 type Host struct {
@@ -64,6 +64,8 @@ type Ddos struct {
 	Rtime int32 `xml:"rtime,attr"`
 	Stime int32 `xml:"stime,attr"`	
 	Mode int32 `xml:"mode,attr"`
+	Hits int `xml:"hits,attr"`
+	BlockTime int `xml:"blocktime,attr"`
 }
 
 type BlackWhiteList struct {

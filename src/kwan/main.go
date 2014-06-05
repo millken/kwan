@@ -38,12 +38,14 @@ func main() {
 	numCpus := runtime.NumCPU()
 	threads := numCpus * 1
 	runtime.GOMAXPROCS(numCpus)
+	//logger.Global = logger.NewDefaultLogger(logger.FINEST)
 	logger.Info("Started: %d cores, %d threads， version: %s", numCpus, threads, VERSION)
 
 	setRlimit()
 	config.Read()
-	startServer()
-	go StartConsole()
+	go filterManager()
+	listenServer()
+	StartConsole()
 	sigChan := make(chan os.Signal, 3)
 
 	signal.Notify(sigChan, os.Interrupt, os.Kill)

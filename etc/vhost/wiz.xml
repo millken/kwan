@@ -1,17 +1,18 @@
 <vhost name="wiz.cn" status="0">
 <bind>:80</bind>
-<host ip="112.125.239.95" port="0">www.wiz.cn</host>
-<host ip="112.125.239.95" port="0">wiz.cn</host>
+<host ip="182.92.20.26" port="0">www.wiz.cn</host>
+<host ip="182.92.20.26" port="0">wiz.cn</host>
 <host ip="220.162.97.165" port="0">cdn.wiz.cn</host>
 <host ip="42.121.253.45" port="0">blog.wiz.cn</host>
+<host ip="182.140.163.45" port="0">test.lo</host>
 
-<limit speed="56" max_per_ip="100" timeout="30"/>
+<limit speed="56" max_cache_size="100000000" max_per_ip="100" timeout="30"/>
 <cache base="true" time="3600" />
 <cache file_ext="png" ignore_param="false" time="60" />
 <cache file_ext="jpg|js|css|gif|html" static="true" ignore_param="true" nocache="true" time="360" />
-<ddos request="10" rtime="1" stime="10" mode="11" />
-<log status="0" type="file" rotate_daily="false">/var/log/kwan.access.log</log>
+<ddos request="1" rtime="1" stime="10" mode="11" hits="50" blocktime="300" />
 <log status="0" type="udp">127.0.0.1:3333</log>
+<log status="0" type="file" rotate_daily="false">/data/logs/wiz.access.log</log>
 <request>
 	<http2https>aa.wiz.cn</http2https>
 

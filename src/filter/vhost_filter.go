@@ -1,32 +1,35 @@
-package webfilter
+package filter
 
 import (
 	"config"
+	"core"
 	"fmt"
-	"github.com/millken/falcore"
+	"logger"
+	"net/http"
 	"strconv"
 	"strings"
 )
 
-type VhostRouter struct {
-	Scheme string
-}
+type VhostRouter int
 
-func (vr *VhostRouter) SelectPipeline(req *falcore.Request) (pipe falcore.RequestFilter) {
-	req.HttpRequest.URL.Scheme = vr.Scheme
-	host, _ := SplitHostPort(req.HttpRequest.Host, 80)
-	dHost, dPort := SplitHostPort(req.ServerAddr, 80)
-	//fmt.Printf("Routing %s::%s%s : %s => %s\n", req.HttpRequest.Host, req.HttpRequest.URL, req.RemoteAddr, req.ServerAddr)
+func (vr VhostRouter) FilterRequest(request *core.Request) *http.Response {
+	request.HttpRequest.URL.Host = request.HttpRequest.Host
+	host, _ := SplitHostPort(request.HttpRequest.Host, 80)
+	dHost, dPort := SplitHostPort(request.ServerAddr, 80)
+	logger.Finest("Routing %s: %s => %s", request.HttpRequest.URL,
+		request.RemoteAddr, request.ServerAddr)
 
 	vhost, found := config.MatchingVhost(dHost, dPort, host)
 	if found {
-		req.Context["config"] = &vhost
+		request.Context["config"] = &vhost
 	} else {
-		req.Context["config"] = &config.Vhost{}
+		request.Context["config"] = &config.Vhost{}
+		//可以直接返回不存在
+		return core.StringResponse(request.HttpRequest, 404, nil, "<h1>Not found</h1>\n")
+
 	}
 
 	return nil
-
 }
 
 func GetSourceIP(domain string, port int, vhost *config.Vhost) (sHost string, sPort int) {

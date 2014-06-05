@@ -45,7 +45,7 @@ func StartConsole() {
 		}
 
 		// TODO: Use a pool of Goroutines
-		go ConsoleRawHandler(conn)
+		ConsoleRawHandler(conn)
 	}
 }
 
@@ -67,7 +67,7 @@ func ConsoleRawHandler(conn net.Conn) {
 			return
 		}
 
-		logger.Debug("got line: %s", line)
+		//logger.Debug("got line: %s", line)
 
 		tokens := strings.Split(line, " ")
 		command := tokens[0]
@@ -77,6 +77,9 @@ func ConsoleRawHandler(conn net.Conn) {
 		case "lookup":
 			subcommand := tokens[1]
 			switch subcommand {
+			case "goroutine":
+				p := pprof.Lookup("goroutine")
+				p.WriteTo(conn, 1)
 			case "heap":
 				p := pprof.Lookup("heap")
 				p.WriteTo(conn, 2)

@@ -18,15 +18,13 @@ type Config struct {
 	Hostname  string  `xml:"hostname"`
 	Servename  string  `xml:"servername"`
 	Console string  `xml:"console"`
-	RedisServer     RedisServer  `xml:"redis_server"`
+	CacheSetting     CacheSetting  `xml:"cache_setting"`
 }
 
-type RedisServer struct {
-	PoolSize     int `xml:"pool_size,attr"`
-	Password   string    `xml:"password,attr"`
-	Addr string `xml:",chardata"`	
+type CacheSetting struct {
+	Path     string `xml:"path,attr"`
+	HotItem   int    `xml:"hot_item,attr"`	
 }
-
 //map[ip][port][domain][rule_id]
 //type Sites map[string]map[int]map[string]int
 
@@ -37,18 +35,19 @@ type Sites struct {
 	Domain string
 }
 
-var config Config
+var config *Config
 var configFile string
+var debugMode  int
 var configPath string
 var (
 	sites map[Sites]int
 	listen map[string]int
 	ssl_listen map[string][]Ssl
 	vhosts map[int]Vhost
-	profileFlag = flag.Bool("profile", false, "print profile")
 )
 func init() {
 	flag.StringVar(&configFile, "c", "", "config file path")
+	flag.IntVar(&debugMode, "d", 2, "debug level. 0=FINEST,1=FINE,2=DEBUG,3=TRACE,4=INFO,5=WARNING,6=ERROR,7=CRITICAL")
 	flag.Parse()
 	if configFile == "" {
 		configFile = "/etc/kwan/config.xml"
@@ -56,6 +55,7 @@ func init() {
 	if os.Geteuid() != 0 {
 		logger.Error("please run as root")
 	}
+	logger.Global = logger.NewDefaultLogger(logger.Level(debugMode))
 }
 
 func Read()  {
@@ -100,6 +100,13 @@ func GetServername() string {
 func GetConsoleAddr() string {
 	return config.Console
 }
-func GetRedis() RedisServer {
-	return config.RedisServer
+
+func GetCacheSetting() CacheSetting {
+	if config.CacheSetting.Path == "" {
+		config.CacheSetting.Path = os.TempDir()
+	}
+	if config.CacheSetting.HotItem == 0 {
+		config.CacheSetting.HotItem = 10000
+	}	
+	return config.CacheSetting
 }
