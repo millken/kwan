@@ -6,5 +6,9 @@ go get github.com/vmihailenco/msgpack
 go get github.com/golang/groupcache/lru
 go build  kwan
 mv kwan ./bin/
+
+go get gopkg.in/fsnotify.v0
+go build  daemon
+mv daemon ./bin/kwan_daemon
 #go install kwan
 
