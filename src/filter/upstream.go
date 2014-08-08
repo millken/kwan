@@ -70,7 +70,7 @@ func (u *Upstream) FilterRequest(request *core.Request) (res *http.Response) {
 	var upstrRes *http.Response
 	upstrRes, err = u.Transport.transport.RoundTrip(req)
 	//logger.Debug("%v", upstrRes)
-	diff := TimeDiff(before, time.Now())
+	diff := time.Now().Sub(before).Seconds()
 	if err == nil {
 		// Copy response over to new record.  Remove connection noise.  Add some sanity.
 		res = core.StringResponse(req, upstrRes.StatusCode, nil, "")
@@ -179,7 +179,3 @@ func (u *Upstream) ping(host string) (up bool) {
 	return false
 }
 
-// Helper for calculating times.  return value in Seconds
-func TimeDiff(startTime time.Time, endTime time.Time) float32 {
-	return float32(endTime.Sub(startTime)) / float32(time.Second)
-}

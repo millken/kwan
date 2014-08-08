@@ -145,7 +145,7 @@ func (srv *Server) handler(c net.Conn) {
 	defer perIpConnTracker.UnregisterIp(ipUint32)
 
 	r := bufio.NewReaderSize(c, 1024)
-	w := bufio.NewWriterSize(c, 4096)
+	w := bufio.NewWriterSize(c, 81920)
 	clientAddrStr := clientAddr.String()
 	for {
 		req, err := http.ReadRequest(r)
@@ -203,7 +203,7 @@ func (srv *Server) handlerWriteResponse(request *Request, res *http.Response, c 
 	}
 
 	var err error
-
+	
 	// Write response
 	if err = res.Write(bw); err != nil {
 		return err
