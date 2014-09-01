@@ -104,7 +104,7 @@ func (srv *Server) setupNonBlockingListener(err error, l *net.TCPListener) error
 	if e := syscall.SetNonblock(fd, true); e != nil {
 		return e
 	}
-	if e := os.NewSyscallError("setsockopt", syscall.SetsockoptInt(s, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)); e != nil {
+	if e := os.NewSyscallError("setsockopt", syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)); e != nil {
 		return e
 	}
 	return nil
