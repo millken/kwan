@@ -66,7 +66,7 @@ func (u *Upstream) FilterRequest(request *core.Request) (res *http.Response) {
 		req.URL.Host = req.Host
 	}
 	before := time.Now()
-	req.Header.Set("Connection", "Keep-Alive")
+	//req.Header.Set("Connection", "Keep-Alive")
 	var upstrRes *http.Response
 	upstrRes, err = u.Transport.transport.RoundTrip(req)
 	//logger.Debug("%v", upstrRes)
@@ -158,7 +158,7 @@ func (u *Upstream) ping(host string) (up bool) {
 	// are overriding the connection always
 	request, err := http.NewRequest("GET", "http://"+host+"/", nil)
 	request.Header.Set("User-Agent", "googleddos pinger")
-	request.Header.Set("Connection", "Keep-Alive") // not sure if this should be here for a ping
+	//request.Header.Set("Connection", "Keep-Alive") // not sure if this should be here for a ping
 	if err != nil {
 		logger.Error("Bad Ping request: %v", err)
 		return false
