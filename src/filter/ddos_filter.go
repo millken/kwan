@@ -48,8 +48,13 @@ func (df DdosFilter) FilterRequest(request *core.Request) *http.Response {
 	}
 	vhostname := vhost.Name
 
-	//core.Debug("%s r=%d rt=%d m=%d st=%d", vhostname, vhost.Ddos.Request, vhost.Ddos.Rtime, vhost.Ddos.Mode, vhost.Ddos.Stime)
+	//logger.Debug("url=%s %s r=%d rt=%d m=%d st=%d", req.URL.String(), vhostname, vhost.Ddos.Request, vhost.Ddos.Rtime, vhost.Ddos.Mode, vhost.Ddos.Stime)
 
+	//varify code
+	if req.URL.Path == "/anti-ddos/code.png" && vhost.Ddos.Mode == DDOS_CODE {
+		logger.Info("ddos_captcha=%q", config.GetDdosCaptcha()[1])
+		return nil
+	}
 	if _, ok := df[vhostname]; !ok {
 		df[vhostname] = new(DdosFilterThrottler)
 		df[vhostname].count = 0
@@ -147,6 +152,28 @@ func (df DdosFilter) getDdosBody(link string, key string, mode int32) (body stri
 		for(var i=0;i<A.length;i++){var k = C.charCodeAt(i%C.length);O += String.fromCharCode(A.charCodeAt(i)^k);}
 		window.setTimeout(function(){window.top.location= O;}, 600);
 		</script></html>`
+	case DDOS_CODE:
+		body = `<html>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<head>
+<style>
+body{ margin:0; padding:0;font-family:微软雅黑,Microsoft YaHei,黑体,Arial; font-size:15px;}
+#contain{ background:#FFFFFF;width:960px; margin:0 auto;}
+.inputclass{width: 111px; height: 31px; line-height: 28px; }
+form,img{vertical-align:bottom;}
+.button{border-radius:3px;-moz-border-radius:3px;-webkit-border-radius:3px;background:#blue;border:1px solid #666;background:-moz-linear-gradient(center top, #FAFAFA 0px, #DDDDDD 100%) repeat-x scroll 0 0 transparent;width:80px;height:30px;}
+.button:hover{-moz-linear-gradient(center top, #5AB4EB 0px, #32A0EB 100%) repeat-x;border:1px solid #333;}
+</style>
+</head>
+<body>
+
+<div id="contain">
+		<div style="height:90px;"> </div>
+		<p align="center">检测到您访问的网站正在遭受攻击，已经启动云盾防护机制。<br />请不用担心，输入验证码即可正常访问。给您带来不便，深表歉意。</p>
+		<p align="center"><form method="get" action="" style="text-align:center">验证码：<input type="text" name="_l1O0" class="inputclass" /><img title="看不清，点此刷新"  onclick="this.src='/anti-ddos/code.png?t=' + Math.random()" width="160px" height="40px" src="/anti-ddos/code.png" /><input type="submit" class="button" value="提交" /></form></p>
+</div>
+
+</body></html>`
 	default:
 		body = "the site was been attacked!"
 	}

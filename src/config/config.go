@@ -8,6 +8,8 @@ import (
 	"path"
 	"path/filepath"
 	"time"
+	"strings"
+	"strconv"
 )
 
 type Config struct {
@@ -19,6 +21,7 @@ type Config struct {
 	Servename  string  `xml:"servername"`
 	Console string  `xml:"console"`
 	CacheSetting     CacheSetting  `xml:"cache_setting"`
+	DdosCaptcha string `xml:"ddos_captcha"`
 }
 
 type CacheSetting struct {
@@ -45,6 +48,7 @@ var (
 	ssl_listen map[string][]Ssl
 	vhosts map[int]Vhost
 	ups map[string]Ups
+	ddos_captcha map[int]string
 )
 func init() {
 	flag.StringVar(&configFile, "c", "", "config file path")
@@ -78,6 +82,7 @@ func Read()  {
 	configPath = path.Dir(current_file) + "/"
 
 	LoadVhostDir()
+	LoadDdosCaptcha()
 	//fmt.Printf("config:%v\n", config)
 	//fmt.Printf("sites:%v\n", sites)
 }
@@ -99,6 +104,10 @@ func GetHostname() string {
 	return config.Hostname
 }
 
+func GetDdosCaptcha() map[int]string{
+	return ddos_captcha
+}
+
 func GetServername() string {
 	return config.Servename
 }
@@ -114,4 +123,20 @@ func GetCacheSetting() CacheSetting {
 		config.CacheSetting.HotItem = 10000
 	}	
 	return config.CacheSetting
+}
+
+func LoadDdosCaptcha()  {
+	newcaptcha	:= make(map[int]string)	
+	parts := strings.Split(config.DdosCaptcha, ";")
+	for _, part := range parts {
+		capt := strings.Split(part, ":")
+		if len(capt) == 2 {
+			index, err := strconv.Atoi(capt[0])
+			if err != nil {
+				continue
+			}
+			newcaptcha[index] = capt[1]
+		}
+	}
+	ddos_captcha = newcaptcha
 }
