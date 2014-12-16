@@ -7,6 +7,8 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
+	"crypto/sha256"
+	"encoding/hex"	
 )
 
 // StripPort strips the port number off of a remote address
@@ -58,6 +60,13 @@ func Crypt(input, key string) string {
 		i++
 	}
 	return result
+}
+
+func Sha256(data string) string {
+	hasher := sha256.New()
+	hasher.Write([]byte(data))
+	hash := hex.EncodeToString(hasher.Sum(nil))
+	return hash
 }
 
 func Base64_encode(str string) string {

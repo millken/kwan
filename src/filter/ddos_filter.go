@@ -13,6 +13,11 @@ import (
 	"sync/atomic"
 	"time"
 	"utils"
+	"io/ioutil"
+	"strings"
+	"os"
+	"github.com/golang/groupcache/lru"
+	"strconv"
 )
 
 const (
@@ -32,8 +37,9 @@ type DdosFilterThrottler struct {
 	tickerM      *sync.RWMutex
 }
 
-// type check ,if no method ,compile error
+
 var _ core.RequestFilter = new(DdosFilter)
+var lruCache = lru.New(5000)
 
 func NewDdosFilter() (df DdosFilter) {
 	df = make(DdosFilter)
@@ -50,11 +56,6 @@ func (df DdosFilter) FilterRequest(request *core.Request) *http.Response {
 
 	//logger.Debug("url=%s %s r=%d rt=%d m=%d st=%d", req.URL.String(), vhostname, vhost.Ddos.Request, vhost.Ddos.Rtime, vhost.Ddos.Mode, vhost.Ddos.Stime)
 
-	//varify code
-	if req.URL.Path == "/anti-ddos/code.png" && vhost.Ddos.Mode == DDOS_CODE {
-		logger.Info("ddos_captcha=%q", config.GetDdosCaptcha()[1])
-		return nil
-	}
 	if _, ok := df[vhostname]; !ok {
 		df[vhostname] = new(DdosFilterThrottler)
 		df[vhostname].count = 0
@@ -71,6 +72,18 @@ func (df DdosFilter) FilterRequest(request *core.Request) *http.Response {
 	if vt != nil && df[vhostname].status {
 		RemoteAddr := request.RemoteAddr.String()
 		ip, _, _ := net.SplitHostPort(RemoteAddr)
+
+		//varify code
+		if req.URL.Path == "/anti-ddos/code.png" && vhost.Ddos.Mode == DDOS_CODE {
+			kfrom := ip + req.UserAgent();
+			sessionkey := utils.Sha256(kfrom);
+			codeindex := utils.RandomInt(1, 10);
+			data, _ := df.getDdosCaptcha(sessionkey, codeindex);
+			h := make(http.Header)
+			h.Set("Content-Type", "image/png")
+			h.Set("Pragma", "No-cache")
+			return core.ByteResponse(request.HttpRequest, 200, h, data)
+		}		
 		ckey := "ddos:" + vhostname + ":" + ip
 		var cval string
 		cval1 := cache.Get(ckey)
@@ -83,6 +96,16 @@ func (df DdosFilter) FilterRequest(request *core.Request) *http.Response {
 			if cval == "pass" {
 				return nil
 			}
+		}
+		if vhost.Ddos.Mode == DDOS_CODE {
+			kfrom := ip + req.UserAgent();
+			key := utils.Sha256(kfrom);
+			logger.Info("key= %s", key)
+			if val, ok := lruCache.Get(key); ok {
+				cval =  val.(string)
+				logger.Info("captcha cval= %s", cval)
+			}					
+			
 		}
 		isjoin := df.isJoinToWhitelist(req.URL, cval)
 		ikey := "ccbl:" + vhostname + ":" + ip
@@ -134,6 +157,26 @@ func (df DdosFilter) FilterRequest(request *core.Request) *http.Response {
 	return nil
 }
 
+func (df DdosFilter) getDdosCaptcha(key string, index int) ([]byte, error) {
+	var err error
+
+	code := config.GetDdosCaptcha()[index];
+	lruCache.Add(key, code);
+
+	if file, err := os.Open(df.buildFileName(index)); err == nil {
+		defer file.Close()
+		if data, err := ioutil.ReadAll(file); err == nil {
+
+			return data, err
+		} //if
+	} //if	
+	return []byte{}, err
+}
+
+func (df DdosFilter) buildFileName(index int) string {
+	return "captcha/" + strconv.Itoa(index) + ".png"
+}
+
 func (df DdosFilter) getDdosBody(link string, key string, mode int32) (body string) {
 	uri, _ := url.Parse(link)
 	q := uri.Query()
@@ -183,7 +226,7 @@ form,img{vertical-align:bottom;}
 func (df DdosFilter) isJoinToWhitelist(uri *url.URL, key string) bool {
 	q := uri.Query()
 	qkey := q.Get("_l1O0")
-	if qkey != "" && qkey == key {
+	if qkey != "" && strings.ToUpper(qkey) == strings.ToUpper(key) {
 		return true
 	}
 	return false
