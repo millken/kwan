@@ -20,6 +20,11 @@ import (
 	"strconv"
 )
 
+/*
+ * http://th.atguy.com/mycode/xor_js_encryption/
+ * https://gist.github.com/kapravel/9238281
+ *
+ */
 const (
 	DDOS_JS_REDIRECT = 10
 	DDOS_JS_TIMEOUT  = 11
