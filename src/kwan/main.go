@@ -38,7 +38,7 @@ func main() {
 	numCpus := runtime.NumCPU()
 	threads := numCpus * 1
 	runtime.GOMAXPROCS(numCpus)
-	//logger.Global = logger.NewDefaultLogger(logger.FINEST)
+	logger.Global = logger.NewDefaultLogger(logger.FINEST)
 	logger.Info("Started: %d cores, %d threads， version: %s", numCpus, threads, VERSION)
 
 	setRlimit()

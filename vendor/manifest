@@ -64,6 +64,12 @@
 			"repository": "https://gopkg.in/fsnotify.v0",
 			"revision": "ea925a0a47d225b2ca7f9932b01d2ed4f3ec74f6",
 			"branch": "master"
+		},
+		{
+			"importpath": "gopkg.in/vmihailenco/msgpack.v2",
+			"repository": "https://gopkg.in/vmihailenco/msgpack.v2",
+			"revision": "9a1bc6e72a1beb86f70c1afd8f20fc9940923ce2",
+			"branch": "master"
 		}
 	]
 }

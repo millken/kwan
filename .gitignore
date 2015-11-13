@@ -9,9 +9,7 @@ _obj
 bin
 pkg
 _test
-github.com
 vhost
-gopkg.in
 
 # Architecture specific extensions/prefixes
 *.[568vq]

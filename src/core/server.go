@@ -8,6 +8,7 @@ import (
 	"logger"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"runtime"
 	"syscall"
@@ -148,7 +149,7 @@ func (srv *Server) handler(c net.Conn) {
 	defer perIpConnTracker.UnregisterIp(ipUint32)
 
 	r := bufio.NewReaderSize(c, 1024)
-	w := bufio.NewWriterSize(c, 81920)
+	w := bufio.NewWriterSize(c, 8192)
 	clientAddrStr := clientAddr.String()
 	for {
 		req, err := http.ReadRequest(r)
@@ -164,6 +165,8 @@ func (srv *Server) handler(c net.Conn) {
 		request.SetServerAddr(srv.listener.Addr().String())
 
 		var res = srv.handlerExecute(request)
+		aaa, e := httputil.DumpResponse(res, false)
+		logger.Debug("%s \n, =========\n%d", e, len(aaa))
 
 		err = srv.handlerWriteResponse(request, res, c, w)
 		if err != nil {
@@ -211,6 +214,8 @@ func (srv *Server) handlerWriteResponse(request *Request, res *http.Response, c 
 	if err = res.Write(bw); err != nil {
 		return err
 	}
+	
+	logger.Debug("bw.Buffered=%d, Available=%d", bw.Buffered(), bw.Available())
 
 	// Flush any remaining buffer
 	err = bw.Flush()
