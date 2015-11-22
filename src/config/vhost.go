@@ -94,6 +94,7 @@ type UpsHost struct {
 	Weight int `xml:"weight,attr"` //权重
 }
 func LoadVhostDir()  {
+	logger.Info("enter LoadVhostDir(), load :%s%s\n", configPath, config.VhostDir)
 	newsites := make(map[Sites]int)
 	newlisten	:= make(map[string]int)
 	newssl	:= make(map[string][]Ssl)

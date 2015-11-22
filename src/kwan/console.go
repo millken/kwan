@@ -1,3 +1,5 @@
+// +build darwin dragonfly freebsd linux netbsd openbsd  
+
 //http://blog.brandonc.me/2013/04/go-program-profiling.html
 package main
 
