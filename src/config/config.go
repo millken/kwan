@@ -5,7 +5,6 @@ import (
 	"flag"
 	"logger"
 	"os"
-	"path"
 	"path/filepath"
 	"time"
 	"strings"
@@ -78,13 +77,12 @@ func Read()  {
 	if err != nil {
 		logger.Exit(err.Error())
 	}
-	current_file, _ := filepath.Abs(configFile)
-	configPath = path.Dir(current_file) + "/"
+	configPath = filepath.Dir(configFile) + "/"
 
 	LoadVhostDir()
 	LoadDdosCaptcha()
-	//fmt.Printf("config:%v\n", config)
-	//fmt.Printf("sites:%v\n", sites)
+	logger.Debug("config:%v\n", config)
+	logger.Debug("sites:%v\n", sites)
 }
 
 

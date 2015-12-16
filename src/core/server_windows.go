@@ -1,3 +1,5 @@
+// +build windows
+
 package core
 
 import (
@@ -11,7 +13,6 @@ import (
 	"net/http/httputil"
 	"os"
 	"runtime"
-	"syscall"
 	"time"
 )
 
@@ -98,16 +99,6 @@ func (srv *Server) ListenAndServeTLSSNI(certs []Certificates) error {
 }
 
 func (srv *Server) setupNonBlockingListener(err error, l *net.TCPListener) error {
-	if srv.listenerFile, err = l.File(); err != nil {
-		return err
-	}
-	fd := int(srv.listenerFile.Fd())
-	if e := syscall.SetNonblock(fd, true); e != nil {
-		return e
-	}
-	if e := os.NewSyscallError("setsockopt", syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)); e != nil {
-		return e
-	}
 	return nil
 }
 
