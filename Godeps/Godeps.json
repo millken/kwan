@@ -1,0 +1,13 @@
+{
+	"ImportPath": "github.com/millken/kwan",
+	"GoVersion": "go1.5.1",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/jawher/mow.cli",
+			"Rev": "9f92de29a56be1141123503ffe924d1d273586ec"
+		}
+	]
+}

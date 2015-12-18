@@ -1,6 +1,0 @@
-<vhost>
-<bind>:81</bind>
-<host ip="101.226.178.141" port="0">www.taobao.com</host>
-<host ip="101.226.178.141" port="0">taobao.com</host>
-</vhost>
-
